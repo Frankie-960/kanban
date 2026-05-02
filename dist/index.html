@@ -10,82 +10,111 @@
   <body>
     <div id="root"></div>
     <script>
-    // Enhancement layer — injects UI elements that require backend features
-    // added after build (forgot-password, admin reset-password).
     (function () {
-      var INJECTED = {};
+      var shown = {};
 
-      // ── Login page: "忘记密码？" link ───────────────────────────────────────
-      function injectForgotLink() {
-        if (localStorage.getItem('token')) return; // already logged in
-        if (INJECTED.fp) return;
+      // ── 登录页：在登录卡片下方显示"忘记密码？"悬浮链接 ────────────────────
+      // 不尝试注入 Vue 内部 DOM，改用固定定位元素，完全不依赖 Ant Design 类名。
+      function showForgotLink() {
+        if (localStorage.getItem('token')) { hideForgotLink(); return; }
+        if (shown.fp) return;
 
-        // Active tab pane submit button (login tab only, not register)
-        var tabPane = document.querySelector('.ant-tabs-tabpane-active');
-        if (!tabPane) return;
-        var btn = tabPane.querySelector('button[type="submit"]');
-        if (!btn) return;
-        // Register tab has a "name" field; login does not — use this to disambiguate
-        if (tabPane.querySelector('input[id*="name"]')) return;
+        // 等待 Vue 渲染出登录表单（检测到 password 输入框即可）
+        if (!document.querySelector('input[type="password"]')) return;
 
-        var wrap = document.createElement('div');
-        wrap.id = 'fp-inject';
-        wrap.style.cssText = 'text-align:right;margin-top:-8px;margin-bottom:16px;';
-        wrap.innerHTML = '<a href="/forgot-password" style="font-size:13px;color:#2563eb;text-decoration:none;">忘记密码？</a>';
-
-        // Insert before the submit button's parent form-item
-        var formItem = btn.closest('.ant-form-item') || btn.parentNode;
-        formItem.parentNode.insertBefore(wrap, formItem);
-        INJECTED.fp = true;
+        var el = document.createElement('div');
+        el.id = 'fp-overlay';
+        el.style.cssText = [
+          'position:fixed',
+          'bottom:0;left:0;right:0',
+          'display:flex;justify-content:center',
+          'padding:18px',
+          'pointer-events:none',         // 不阻挡页面其他点击
+          'z-index:9998',
+        ].join(';');
+        el.innerHTML = [
+          '<a href="/forgot-password" style="',
+            'pointer-events:auto;',
+            'font-size:13px;color:#2563eb;',
+            'background:rgba(255,255,255,0.92);',
+            'backdrop-filter:blur(4px);',
+            'padding:7px 18px;border-radius:20px;',
+            'box-shadow:0 2px 10px rgba(0,0,0,0.10);',
+            'text-decoration:none;font-weight:500;',
+            'border:1px solid #dbeafe;',
+            'transition:box-shadow .2s;',
+          '">忘记密码？</a>',
+        ].join('');
+        document.body.appendChild(el);
+        shown.fp = true;
       }
 
-      // ── Admin page: floating "密码重置管理" button ─────────────────────────
-      function injectAdminResetBtn() {
-        if (INJECTED.adminBtn) return;
-        // Confirm we're really on the admin user-management page
-        var heading = document.querySelector('h2');
-        if (!heading) return;
-        // The heading text may be garbled (GBK in UTF-8 bundle) — just check
-        // that we're at /admin and a heading + table exist
-        if (!document.querySelector('.ant-table')) return;
+      function hideForgotLink() {
+        var el = document.getElementById('fp-overlay');
+        if (el) { el.remove(); shown.fp = false; }
+      }
+
+      // ── 管理员用户管理页：右下角"密码重置管理"浮动按钮 ──────────────────
+      function showAdminBtn() {
+        if (shown.adminBtn) return;
+        if (!document.querySelector('.ant-table')) return;   // 表格尚未渲染
 
         var fab = document.createElement('button');
         fab.id = 'admin-reset-fab';
-        fab.title = '用户密码重置管理';
         fab.style.cssText = [
           'position:fixed;bottom:28px;right:28px;z-index:9999',
           'background:#2563eb;color:#fff;border:none;border-radius:10px',
           'padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer',
           'box-shadow:0 4px 16px rgba(37,99,235,.35)',
-          'display:flex;align-items:center;gap:8px;transition:background .2s',
+          'display:flex;align-items:center;gap:8px',
         ].join(';');
-        fab.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>密码重置管理';
-        fab.onmouseenter = function () { fab.style.background = '#1d4ed8'; };
-        fab.onmouseleave = function () { fab.style.background = '#2563eb'; };
-        fab.onclick = function () { window.location.href = '/admin/users'; };
+        fab.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>密码重置管理';
+        fab.onmouseenter = function () { this.style.background = '#1d4ed8'; };
+        fab.onmouseleave = function () { this.style.background = '#2563eb'; };
+        fab.onclick     = function () { window.location.href = '/admin/users'; };
         document.body.appendChild(fab);
-        INJECTED.adminBtn = true;
+        shown.adminBtn = true;
       }
 
-      // ── Route change detection (SPA) ────────────────────────────────────────
-      var lastPath = '';
-      function cleanup() {
-        ['fp-inject', 'admin-reset-fab'].forEach(function (id) {
-          var el = document.getElementById(id);
-          if (el) el.remove();
-        });
-        INJECTED = {};
+      function hideAdminBtn() {
+        var el = document.getElementById('admin-reset-fab');
+        if (el) { el.remove(); shown.adminBtn = false; }
       }
 
+      // ── 路由监听（SPA pushState/replaceState 拦截）────────────────────────
+      var lastPath = location.pathname;
+
+      function onRouteChange() {
+        var path = location.pathname;
+        if (path === lastPath) return;
+        lastPath = path;
+        hideForgotLink();
+        hideAdminBtn();
+      }
+
+      // 拦截 pushState / replaceState
+      ['pushState', 'replaceState'].forEach(function (fn) {
+        var orig = history[fn];
+        history[fn] = function () {
+          orig.apply(this, arguments);
+          onRouteChange();
+        };
+      });
+      window.addEventListener('popstate', onRouteChange);
+
+      // 轮询渲染（组件可能在 pushState 之后延迟挂载）
       setInterval(function () {
-        var path = window.location.pathname;
-        if (path !== lastPath) {
-          cleanup();
-          lastPath = path;
+        onRouteChange();
+        var path = location.pathname;
+        if ((path === '/' || path === '/login') && !localStorage.getItem('token')) {
+          showForgotLink();
+        } else {
+          hideForgotLink();
         }
-        if (path === '/' || path === '/login') injectForgotLink();
-        if (path === '/admin') injectAdminResetBtn();
-      }, 400);
+        if (path === '/admin') {
+          showAdminBtn();
+        }
+      }, 500);
     })();
     </script>
   </body>
