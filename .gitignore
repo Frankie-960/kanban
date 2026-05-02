@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+server/node_modules/
+
+# Environment secrets — NEVER commit these
+.env
+server/.env
+
+# TypeScript build output
+server/dist/
+
+# SQLite database — contains real user data
+server/prisma/dev.db
+server/prisma/dev.db-journal
+server/prisma/dev.db-shm
+server/prisma/dev.db-wal
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/settings.json
+.idea/
+
+# Temp / test artifacts
+*.tmp
+coverage/

@@ -1,0 +1,205 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id                 String   @id @default(cuid())
+  name               String
+  email              String   @unique
+  passwordHash       String
+  role               String   @default("MEMBER")
+  departmentId       String?
+  department         Department? @relation(fields: [departmentId], references: [id])
+  deepseekApiKey     String?
+  llmProvider        String   @default("deepseek")
+  mustChangePassword Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  items               Item[]
+  experiences         Experience[]
+  statusHistories     StatusHistory[]
+  announcements       Announcement[]
+  passwordResetTokens PasswordResetToken[]
+}
+
+model Department {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members       User[]
+  announcements Announcement[]
+}
+
+model Item {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  progress    String?
+  status      String    @default("TODO")
+  subStatus   String?
+  priority    String    @default("MEDIUM")
+  category    String    @default("OTHER")
+  dueDate     DateTime?
+  startDate   DateTime?
+  completedAt DateTime?
+  visibility  String    @default("PRIVATE")
+  order       Int       @default(0)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  departmentId String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  estimatedAmount     Float?
+  finalAmount         Float?
+  currency            String?
+  supplierName        String?
+  supplierAmount      Float?
+  requesterDepartment String?
+
+  announcementId String?
+  announcement   Announcement? @relation(fields: [announcementId], references: [id], onDelete: SetNull)
+
+  reminders       Reminder[]
+  experiences     Experience[]
+  statusHistories StatusHistory[]
+
+  @@index([userId])
+  @@index([departmentId, visibility])
+  @@index([announcementId])
+}
+
+model StatusHistory {
+  id            String   @id @default(cuid())
+  itemId        String
+  item          Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  fromStatus    String?
+  toStatus      String?
+  fromSubStatus String?
+  toSubStatus   String?
+  operatorId    String
+  operator      User     @relation(fields: [operatorId], references: [id])
+  createdAt     DateTime @default(now())
+
+  @@index([itemId])
+}
+
+model Reminder {
+  id               String    @id @default(cuid())
+  itemId           String
+  item             Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  type             String
+  remindAt         DateTime
+  isRecurring      Boolean   @default(false)
+  recurringPattern String?
+  isEnabled        Boolean   @default(true)
+  lastSentAt       DateTime?
+  createdAt        DateTime  @default(now())
+
+  @@index([itemId])
+  @@index([remindAt])
+  @@index([isEnabled, remindAt])
+}
+
+model Experience {
+  id        String   @id @default(cuid())
+  itemId    String
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([itemId])
+  @@index([userId])
+}
+
+model Report {
+  id           String   @id @default(cuid())
+  userId       String?
+  departmentId String?
+  type         String
+  periodStart  DateTime
+  periodEnd    DateTime
+  content      String
+  exportedFile String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([departmentId])
+}
+
+model Announcement {
+  id            String   @id @default(cuid())
+  departmentId  String
+  department    Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  title         String
+  content       String
+  publishedById String
+  publishedBy   User     @relation(fields: [publishedById], references: [id])
+  createdAt     DateTime @default(now())
+
+  targetAll     Boolean  @default(true)
+  targetUserIds String   @default("[]")
+  linkedItemIds String   @default("[]")
+  confirmations String   @default("[]")
+  readBy        String   @default("[]") // JSON: [{userId, readAt}]
+
+  isExpired   Boolean   @default(false)
+  expiredAt   DateTime?
+  isWithdrawn Boolean   @default(false)
+  withdrawnAt DateTime?
+
+  createTaskForTargets Boolean @default(false)
+
+  items Item[]
+
+  @@index([departmentId])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([token])
+}
+
+model SubStatus {
+  id        String   @id @default(cuid())
+  userId    String?
+  category  String
+  name      String
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  userId    String?
+  key       String
+  name      String
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, key])
+  @@index([userId])
+}
