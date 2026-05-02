@@ -108,7 +108,12 @@ app.use('/api', (_req, res) => {
 const distPath = path.join(__dirname, '../../dist');
 app.use(express.static(distPath));
 
-// SPA fallback — let Vue Router handle all non-API routes
+// Standalone pages — must be before the SPA wildcard so Vue Router doesn't intercept them
+app.get('/forgot-password', (_req, res) => res.sendFile(path.join(distPath, 'forgot-password.html')));
+app.get('/reset-password',  (_req, res) => res.sendFile(path.join(distPath, 'reset-password.html')));
+app.get('/admin/users',     (_req, res) => res.sendFile(path.join(distPath, 'admin-users.html')));
+
+// SPA fallback — let Vue Router handle all other non-API routes
 app.get('*', (_req, res) => {
   res.sendFile(path.join(distPath, 'index.html'));
 });
