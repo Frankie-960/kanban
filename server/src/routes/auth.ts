@@ -222,7 +222,9 @@ router.put('/users/:id/role', authMiddleware, async (req: AuthRequest, res) => {
 router.post('/forgot-password', async (req, res) => {
   try {
     const { email } = req.body as { email?: string };
-    if (!email) return res.status(400).json({ error: 'Email is required' });
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: 'Valid email address is required' });
+    }
 
     res.json({ message: 'If that email is registered, a reset link has been sent.' });
 
@@ -230,10 +232,9 @@ router.post('/forgot-password', async (req, res) => {
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return;
 
-    // Invalidate existing unused tokens for this user
-    await prisma.passwordResetToken.updateMany({
-      where: { userId: user.id, used: false },
-      data: { used: true },
+    // Invalidate ALL existing tokens for this user (used + expired cleanup)
+    await prisma.passwordResetToken.deleteMany({
+      where: { userId: user.id },
     });
 
     const token = crypto.randomBytes(32).toString('hex');
