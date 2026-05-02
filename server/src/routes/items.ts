@@ -201,6 +201,12 @@ router.post('/', async (req: AuthRequest, res) => {
         departmentId: data.departmentId,
         userId: req.userId!,
         order: (maxOrder._max.order || 0) + 1,
+        estimatedAmount: data.estimatedAmount,
+        finalAmount: data.finalAmount,
+        currency: data.currency,
+        supplierName: data.supplierName,
+        supplierAmount: data.supplierAmount,
+        requesterDepartment: data.requesterDepartment,
       },
     });
     res.json(item);
