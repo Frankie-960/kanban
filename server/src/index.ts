@@ -1,5 +1,6 @@
 import './utils/env'; // loads .env and validates JWT_SECRET before anything else
 import express from 'express';
+import path from 'path';
 import { startReminderScheduler } from './services/reminderScheduler';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -98,9 +99,18 @@ app.get('/api/health', async (_, res) => {
   }
 });
 
-// 404 handler
-app.use((_req, res) => {
+// 404 for unmatched /api routes
+app.use('/api', (_req, res) => {
   res.status(404).json({ error: 'Not found' });
+});
+
+// Serve frontend static files (production build)
+const distPath = path.join(__dirname, '../../dist');
+app.use(express.static(distPath));
+
+// SPA fallback — let Vue Router handle all non-API routes
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
 });
 
 // Global error handler
