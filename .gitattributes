@@ -1,0 +1,12 @@
+# 强制所有文本文件在仓库中使用 LF 换行，防止 Windows CRLF 破坏 Linux 脚本
+* text=auto eol=lf
+
+# 二进制文件不转换
+*.db    binary
+*.jpg   binary
+*.jpeg  binary
+*.png   binary
+*.gif   binary
+*.ico   binary
+*.woff  binary
+*.woff2 binary
