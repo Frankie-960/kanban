@@ -40,18 +40,19 @@ function buildItemWhere(
 ) {
   const { status, priority, category, search, view } = query;
 
-  const visibilityFilter =
-    view === 'department' && userDeptId
-      ? {
-          OR: [
-            { userId },
-            {
-              visibility: 'DEPARTMENT' as const,
-              OR: [{ departmentId: userDeptId }, { departmentId: null }],
-            },
-          ],
-        }
-      : { userId };
+  // Always include department tasks when user belongs to a department,
+  // regardless of which view the frontend is currently showing.
+  const visibilityFilter = userDeptId
+    ? {
+        OR: [
+          { userId },
+          {
+            visibility: 'DEPARTMENT' as const,
+            OR: [{ departmentId: userDeptId }, { departmentId: null }],
+          },
+        ],
+      }
+    : { userId };
 
   // All conditions are ANDed together so that search never bypasses visibility
   const andClauses: object[] = [visibilityFilter];
