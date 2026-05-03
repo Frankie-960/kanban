@@ -1,22 +1,77 @@
-server {
-    listen 80;
-    server_name 你的服务器IP或域名;
+# 采购工作看板 — Nginx 生产配置
+# 文件路径: /etc/nginx/sites-available/kanban
+#
+# 使用方式:
+#   sudo cp nginx.conf.example /etc/nginx/sites-available/kanban
+#   sudo ln -sf /etc/nginx/sites-available/kanban /etc/nginx/sites-enabled/
+#   sudo nginx -t && sudo systemctl reload nginx
+# -------------------------------------------------------
 
-    root /www/contract-generator/dist;
+server {
+    listen 80 default_server;
+    server_name _;          # 用 IP 访问时填 _；有域名则替换为实际域名
+
+    # 前端静态文件目录
+    root /opt/kanban/dist;
     index index.html;
 
-    # 前端路由 - SPA 支持
+    # ── Gzip 压缩 ─────────────────────────────────────────
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_types
+        text/plain text/css text/xml
+        application/json application/javascript application/xml
+        font/woff2;
+    gzip_min_length 1024;
+
+    # ── 静态资源（js/css/图片）—— 长缓存 ────────────────────
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff2?)$ {
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+        access_log off;
+    }
+
+    # ── API 反向代理 ─────────────────────────────────────────
+    location /api/ {
+        proxy_pass         http://127.0.0.1:3001;
+        proxy_http_version 1.1;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_read_timeout 120s;
+        client_max_body_size 5m;
+    }
+
+    # ── 独立 HTML 页面 ────────────────────────────────────────
+    location = /forgot-password { try_files /forgot-password.html =404; }
+    location = /reset-password  { try_files /reset-password.html  =404; }
+    location /admin/users       { try_files /admin-users.html     =404; }
+
+    # ── SPA 路由回退（React Router） ─────────────────────────
     location / {
         try_files $uri $uri/ /index.html;
     }
-
-    # API 代理到后端
-    location /api {
-        proxy_pass http://127.0.0.1:3001;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
 }
+
+# ── HTTPS 配置（有域名后启用） ────────────────────────────────
+# 安装 certbot: sudo apt install certbot python3-certbot-nginx
+# 申请证书: sudo certbot --nginx -d yourdomain.com
+#
+# certbot 会自动修改上方配置，也可手动添加:
+#
+# server {
+#     listen 443 ssl http2;
+#     server_name yourdomain.com;
+#     ssl_certificate     /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
+#     ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
+#     ssl_protocols TLSv1.2 TLSv1.3;
+#     ssl_ciphers HIGH:!aNULL:!MD5;
+#     # ... 其余配置同上
+# }
+# server {
+#     listen 80;
+#     server_name yourdomain.com;
+#     return 301 https://$host$request_uri;  # HTTP → HTTPS 重定向
+# }
