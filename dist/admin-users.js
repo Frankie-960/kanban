@@ -1,7 +1,18 @@
 var authToken = null;
+var allUsers   = [];
+
+// 兼容 enhance.js 的多 key 扫描策略
+function findToken() {
+  for (var i = 0; i < localStorage.length; i++) {
+    var k = localStorage.key(i);
+    var v = localStorage.getItem(k);
+    if (v && typeof v === 'string' && v.startsWith('ey') && v.split('.').length === 3) return v;
+  }
+  return null;
+}
 
 async function tryAutoLogin() {
-  var t = localStorage.getItem('token');
+  var t = findToken();
   if (!t) return false;
   try {
     var res = await fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + t } });
@@ -64,31 +75,72 @@ async function showMain() {
   await loadUsers();
 }
 
+// ── 搜索 ──────────────────────────────────────────────────────────────────
+document.getElementById('user-search').addEventListener('input', function () {
+  renderUsers(allUsers, this.value.trim().toLowerCase());
+});
+
 async function loadUsers() {
   var tbody = document.getElementById('user-list');
   var errEl = document.getElementById('main-error');
+  var countEl = document.getElementById('user-count');
   tbody.innerHTML = '<tr><td colspan="5" class="empty">加载中…</td></tr>';
   errEl.style.display = 'none';
 
   try {
-    var res = await fetch('/api/auth/users', { headers: { Authorization: 'Bearer ' + authToken } });
-    if (!res.ok) throw new Error('获取用户列表失败');
-    var users = await res.json();
-    if (!users.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty">暂无用户</td></tr>'; return; }
+    // 并行拉取用户列表和部门列表（用于显示部门名）
+    var [usersRes, deptsRes] = await Promise.all([
+      fetch('/api/auth/users',    { headers: { Authorization: 'Bearer ' + authToken } }),
+      fetch('/api/departments',   { headers: { Authorization: 'Bearer ' + authToken } }),
+    ]);
+    if (!usersRes.ok) throw new Error('获取用户列表失败');
+    var users = await usersRes.json();
+    var depts  = deptsRes.ok ? await deptsRes.json() : [];
 
-    tbody.innerHTML = users.map(function (u) {
-      return '<tr>'
-        + '<td><strong>' + esc(u.name) + '</strong></td>'
-        + '<td style="color:#64748b">' + esc(u.email) + '</td>'
-        + '<td><span class="role-badge role-' + u.role + '">' + roleLabel(u.role) + '</span></td>'
-        + '<td style="color:#94a3b8;font-size:12px">' + (u.departmentId ? u.departmentId.slice(0, 8) + '…' : '—') + '</td>'
-        + '<td style="text-align:right"><button class="btn-sm btn-warn" onclick="resetPassword(\'' + u.id + '\',\'' + esc(u.name) + '\')">重置密码</button></td>'
-        + '</tr>';
-    }).join('');
+    // 建立 deptId → name 映射
+    var deptMap = {};
+    depts.forEach(function (d) { deptMap[d.id] = d.name; });
+
+    // 把部门名挂到 user 上
+    allUsers = users.map(function (u) {
+      return Object.assign({}, u, { deptName: u.departmentId ? (deptMap[u.departmentId] || u.departmentId.slice(0, 8) + '…') : '—' });
+    });
+
+    countEl.textContent = allUsers.length + ' 名用户';
+    renderUsers(allUsers, document.getElementById('user-search').value.trim().toLowerCase());
   } catch (err) {
     errEl.textContent = err.message; errEl.style.display = 'block';
     tbody.innerHTML = '<tr><td colspan="5" class="empty">加载失败</td></tr>';
   }
+}
+
+function renderUsers(users, keyword) {
+  var tbody   = document.getElementById('user-list');
+  var countEl = document.getElementById('user-count');
+  var filtered = keyword
+    ? users.filter(function (u) {
+        return esc(u.name).toLowerCase().includes(keyword)
+            || u.email.toLowerCase().includes(keyword)
+            || (u.deptName && u.deptName.toLowerCase().includes(keyword));
+      })
+    : users;
+
+  countEl.textContent = filtered.length + (keyword ? ' / ' + users.length : '') + ' 名用户';
+
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">' + (keyword ? '无匹配用户' : '暂无用户') + '</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(function (u) {
+    return '<tr>'
+      + '<td><strong>' + esc(u.name) + '</strong></td>'
+      + '<td style="color:#64748b">' + esc(u.email) + '</td>'
+      + '<td><span class="role-badge role-' + u.role + '">' + roleLabel(u.role) + '</span></td>'
+      + '<td style="color:#64748b;font-size:13px">' + esc(u.deptName) + '</td>'
+      + '<td style="text-align:right"><button class="btn-sm btn-warn" onclick="resetPassword(\'' + u.id + '\',\'' + esc(u.name) + '\')">重置密码</button></td>'
+      + '</tr>';
+  }).join('');
 }
 
 async function resetPassword(userId, userName) {

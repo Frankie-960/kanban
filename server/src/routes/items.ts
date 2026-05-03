@@ -70,11 +70,32 @@ function buildItemWhere(
   return { AND: andClauses };
 }
 
-// Get all items
+// Get all items — supports optional pagination via ?page=1&limit=50
 router.get('/', async (req: AuthRequest, res) => {
   try {
     const currentUser = req.user!;
     const where = buildItemWhere(req.userId!, currentUser.departmentId, req.query);
+
+    const page  = req.query.page  ? parseInt(req.query.page  as string, 10) : null;
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : null;
+
+    if (page !== null && limit !== null && page > 0 && limit > 0) {
+      const [items, total] = await Promise.all([
+        prisma.item.findMany({
+          where,
+          orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
+          skip: (page - 1) * limit,
+          take: limit,
+          include: {
+            experiences: true,
+            user: { select: { id: true, name: true } },
+            _count: { select: { experiences: true } },
+          },
+        }),
+        prisma.item.count({ where }),
+      ]);
+      return res.json({ items, total, page, limit, pages: Math.ceil(total / limit) });
+    }
 
     const items = await prisma.item.findMany({
       where,
@@ -98,6 +119,7 @@ router.get('/summary', async (req: AuthRequest, res) => {
     const currentUser = req.user!;
     const where = buildItemWhere(req.userId!, currentUser.departmentId, req.query);
 
+    const now = new Date();
     const [totals, byCategory, byStatus, allItems] = await Promise.all([
       prisma.item.aggregate({
         where,
@@ -117,13 +139,17 @@ router.get('/summary', async (req: AuthRequest, res) => {
       }),
       prisma.item.findMany({
         where,
-        select: { id: true, title: true, estimatedAmount: true, finalAmount: true, status: true, currency: true },
+        select: { id: true, title: true, estimatedAmount: true, finalAmount: true, status: true, currency: true, dueDate: true },
       }),
     ]);
 
     const overBudgetItems = allItems.filter(
       (i) => i.finalAmount !== null && i.estimatedAmount !== null && i.finalAmount > i.estimatedAmount
     );
+
+    const overdueCount = allItems.filter(
+      (i) => i.status !== 'COMPLETED' && i.dueDate && new Date(i.dueDate) < now
+    ).length;
 
     const totalEst = totals._sum.estimatedAmount ?? 0;
     const totalFinal = totals._sum.finalAmount ?? 0;
@@ -136,6 +162,7 @@ router.get('/summary', async (req: AuthRequest, res) => {
         supplierAmount: totals._sum.supplierAmount ?? 0,
         variance: totalFinal - totalEst,
         variancePercent: totalEst > 0 ? Number((((totalFinal - totalEst) / totalEst) * 100).toFixed(2)) : null,
+        overdueCount,
       },
       byCategory,
       byStatus,

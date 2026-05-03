@@ -26,8 +26,10 @@ const loginSchema = z.object({
 const profileUpdateSchema = z
   .object({
     name: z.string().min(1).optional(),
-    oldPassword: z.string().optional(),
+    oldPassword: z.string().optional(),  // 后端原字段
+    password: z.string().optional(),      // 前端别名（兼容）
     newPassword: z.string().min(6).optional(),
+    confirmPassword: z.string().optional(), // 前端确认字段（忽略，只用 newPassword）
     deepseekApiKey: z.string().nullable().optional(),
     llmProvider: z
       .enum([
@@ -40,6 +42,11 @@ const profileUpdateSchema = z
       ])
       .optional(),
   })
+  .transform((d) => ({
+    ...d,
+    // 统一：前端发 password，后端用 oldPassword
+    oldPassword: d.oldPassword || d.password,
+  }))
   .refine((d) => !d.newPassword || !!d.oldPassword, {
     message: 'Current password is required to set a new password',
     path: ['oldPassword'],

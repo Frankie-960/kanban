@@ -473,4 +473,44 @@ router.put('/:id/members/:userId', async (req: AuthRequest, res) => {
   }
 });
 
+// Delete department — ADMIN only; nullifies member/item references, deletes announcements
+router.delete('/:id', async (req: AuthRequest, res) => {
+  try {
+    if (req.user!.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Only admins can delete departments' });
+    }
+    const dept = await prisma.department.findUnique({ where: { id: req.params.id } });
+    if (!dept) return res.status(404).json({ error: 'Department not found' });
+
+    await prisma.$transaction([
+      prisma.user.updateMany({ where: { departmentId: req.params.id }, data: { departmentId: null } }),
+      prisma.item.updateMany({ where: { departmentId: req.params.id }, data: { departmentId: null, visibility: 'PRIVATE' } }),
+      prisma.announcement.deleteMany({ where: { departmentId: req.params.id } }),
+      prisma.department.delete({ where: { id: req.params.id } }),
+    ]);
+    res.json({ success: true });
+  } catch {
+    res.status(500).json({ error: 'Failed to delete department' });
+  }
+});
+
+// Update department name/description — ADMIN only
+router.patch('/:id', async (req: AuthRequest, res) => {
+  try {
+    if (req.user!.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Only admins can edit departments' });
+    }
+    const { name, description } = req.body as { name?: string; description?: string };
+    if (!name?.trim()) return res.status(400).json({ error: 'Name is required' });
+
+    const dept = await prisma.department.update({
+      where: { id: req.params.id },
+      data: { name: name.trim(), description },
+    });
+    res.json(dept);
+  } catch {
+    res.status(500).json({ error: 'Failed to update department' });
+  }
+});
+
 export default router;
