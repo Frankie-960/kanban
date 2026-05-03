@@ -17,92 +17,52 @@
     .topbar-badge { background: #eff6ff; color: #2563eb; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
     .topbar-right { display: flex; align-items: center; gap: 12px; }
     .topbar-user { font-size: 13px; color: #64748b; }
-    .btn-sm {
-      padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500;
-      cursor: pointer; border: none; transition: background .15s;
-    }
+    .btn-sm { padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: background .15s; }
     .btn-outline { background: #fff; border: 1.5px solid #e2e8f0; color: #374151; }
     .btn-outline:hover { background: #f8fafc; }
     .btn-primary { background: #2563eb; color: #fff; }
     .btn-primary:hover { background: #1d4ed8; }
-    .btn-danger  { background: #ef4444; color: #fff; }
-    .btn-danger:hover { background: #dc2626; }
     .btn-warn    { background: #f59e0b; color: #fff; }
     .btn-warn:hover { background: #d97706; }
-    .btn:disabled { opacity: .5; cursor: not-allowed; }
-
-    /* Login screen */
-    #login-screen {
-      display: flex; align-items: center; justify-content: center;
-      min-height: 100vh; padding: 24px;
-    }
-    .login-card {
-      background: #fff; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,.08);
-      padding: 40px 36px; width: 100%; max-width: 380px;
-    }
+    #login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
+    .login-card { background: #fff; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,.08); padding: 40px 36px; width: 100%; max-width: 380px; }
     .login-card h2 { font-size: 20px; color: #0f172a; margin-bottom: 4px; }
     .login-card p { font-size: 13px; color: #64748b; margin-bottom: 24px; }
     label { display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 5px; }
-    input[type=email], input[type=password], input[type=text] {
-      width: 100%; padding: 9px 12px; border: 1.5px solid #e2e8f0; border-radius: 7px;
-      font-size: 14px; color: #1e293b; outline: none; transition: border-color .2s;
-    }
+    input[type=email], input[type=password] { width: 100%; padding: 9px 12px; border: 1.5px solid #e2e8f0; border-radius: 7px; font-size: 14px; color: #1e293b; outline: none; transition: border-color .2s; }
     input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
     .fg { margin-bottom: 16px; }
     .btn-full { width: 100%; padding: 10px; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; border: none; background: #2563eb; color: #fff; }
     .btn-full:hover { background: #1d4ed8; }
     .btn-full:disabled { background: #93c5fd; cursor: not-allowed; }
-
-    /* Main content */
     #main-screen { display: none; padding: 24px; }
     .content { max-width: 900px; margin: 0 auto; }
     .page-header { margin-bottom: 20px; }
     .page-header h1 { font-size: 20px; font-weight: 700; color: #0f172a; }
     .page-header p  { font-size: 13px; color: #64748b; margin-top: 4px; }
-
     .table-wrap { background: #fff; border-radius: 10px; box-shadow: 0 1px 6px rgba(0,0,0,.06); overflow: hidden; }
     table { width: 100%; border-collapse: collapse; }
     th { text-align: left; padding: 12px 16px; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .04em; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
     td { padding: 13px 16px; font-size: 14px; color: #1e293b; border-bottom: 1px solid #f1f5f9; }
     tr:last-child td { border-bottom: none; }
     tr:hover td { background: #f8fafc; }
-    .role-badge {
-      display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 500;
-    }
-    .role-ADMIN           { background: #eff6ff; color: #1d4ed8; }
-    .role-DEPARTMENT_ADMIN{ background: #f0fdf4; color: #15803d; }
-    .role-MEMBER          { background: #f8fafc; color: #475569; }
-
+    .role-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+    .role-ADMIN            { background: #eff6ff; color: #1d4ed8; }
+    .role-DEPARTMENT_ADMIN { background: #f0fdf4; color: #15803d; }
+    .role-MEMBER           { background: #f8fafc; color: #475569; }
     .alert { padding: 11px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
     .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
-
-    /* Modal */
-    .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,.4);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 100; padding: 24px; display: none;
-    }
-    .modal {
-      background: #fff; border-radius: 12px; padding: 32px;
-      width: 100%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,.2);
-    }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: none; align-items: center; justify-content: center; z-index: 100; padding: 24px; }
+    .modal { background: #fff; border-radius: 12px; padding: 32px; width: 100%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,.2); }
     .modal h3 { font-size: 18px; color: #0f172a; margin-bottom: 8px; }
     .modal p  { font-size: 13px; color: #64748b; margin-bottom: 20px; line-height: 1.6; }
-    .temp-pass {
-      background: #f8fafc; border: 1.5px dashed #cbd5e1;
-      border-radius: 8px; padding: 14px 16px;
-      font-family: 'Courier New', monospace; font-size: 20px; font-weight: 700;
-      color: #0f172a; text-align: center; letter-spacing: 2px;
-      margin-bottom: 8px; user-select: all;
-    }
+    .temp-pass { background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 8px; padding: 14px 16px; font-family: 'Courier New', monospace; font-size: 20px; font-weight: 700; color: #0f172a; text-align: center; letter-spacing: 2px; margin-bottom: 8px; user-select: all; }
     .temp-hint { font-size: 12px; color: #94a3b8; text-align: center; margin-bottom: 20px; }
     .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
     .copy-btn { background: #e0f2fe; color: #0369a1; border: none; border-radius: 6px; padding: 6px 14px; font-size: 13px; cursor: pointer; }
     .copy-btn:hover { background: #bae6fd; }
-
     .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .6s linear infinite; vertical-align: middle; }
     @keyframes spin { to { transform: rotate(360deg); } }
-
     .empty { text-align: center; padding: 40px; color: #94a3b8; font-size: 14px; }
     .back-app { font-size: 13px; color: #2563eb; text-decoration: none; }
     .back-app:hover { text-decoration: underline; }
@@ -110,8 +70,7 @@
 </head>
 <body>
 
-<!-- Login screen (shown when not authenticated / not admin) -->
-<div id="login-screen">
+<div id="login-screen" style="display:none">
   <div class="login-card">
     <h2>管理员登录</h2>
     <p>此页面仅限管理员访问</p>
@@ -130,7 +89,6 @@
   </div>
 </div>
 
-<!-- Main screen -->
 <div id="main-screen">
   <div class="topbar">
     <div class="topbar-left">
@@ -143,7 +101,6 @@
       <button class="btn-sm btn-outline" id="logout-btn">退出登录</button>
     </div>
   </div>
-
   <div id="main-content" class="content" style="padding-top:24px;">
     <div class="page-header">
       <h1>成员管理</h1>
@@ -154,10 +111,7 @@
       <table>
         <thead>
           <tr>
-            <th>姓名</th>
-            <th>邮箱</th>
-            <th>角色</th>
-            <th>部门 ID</th>
+            <th>姓名</th><th>邮箱</th><th>角色</th><th>部门 ID</th>
             <th style="text-align:right">操作</th>
           </tr>
         </thead>
@@ -169,7 +123,6 @@
   </div>
 </div>
 
-<!-- Reset password result modal -->
 <div class="modal-overlay" id="modal">
   <div class="modal">
     <h3>密码已重置</h3>
@@ -183,145 +136,6 @@
   </div>
 </div>
 
-<script>
-  let authToken = null;
-
-  // ── Auth helpers ──────────────────────────────────────────────────
-  async function tryAutoLogin() {
-    const t = localStorage.getItem('token');
-    if (!t) return false;
-    try {
-      const res = await fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + t } });
-      if (!res.ok) return false;
-      const me = await res.json();
-      if (me.role !== 'ADMIN') return false;
-      authToken = t;
-      document.getElementById('current-user-email').textContent = me.email;
-      return true;
-    } catch { return false; }
-  }
-
-  async function init() {
-    const ok = await tryAutoLogin();
-    if (ok) {
-      showMain();
-    } else {
-      document.getElementById('login-screen').style.display = 'flex';
-    }
-  }
-
-  document.getElementById('login-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const errEl = document.getElementById('login-error');
-    const btn   = document.getElementById('login-btn');
-    errEl.style.display = 'none';
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> 登录中…';
-
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: document.getElementById('login-email').value.trim(),
-          password: document.getElementById('login-password').value,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) { errEl.textContent = data.error || '登录失败'; errEl.style.display = 'block'; return; }
-      if (data.user.role !== 'ADMIN') { errEl.textContent = '该账号没有管理员权限'; errEl.style.display = 'block'; return; }
-      authToken = data.token;
-      document.getElementById('current-user-email').textContent = data.user.email;
-      document.getElementById('login-screen').style.display = 'none';
-      showMain();
-    } catch {
-      errEl.textContent = '网络错误，请重试'; errEl.style.display = 'block';
-    } finally {
-      btn.disabled = false; btn.textContent = '登录';
-    }
-  });
-
-  document.getElementById('logout-btn').addEventListener('click', () => {
-    authToken = null;
-    document.getElementById('main-screen').style.display = 'none';
-    document.getElementById('login-screen').style.display = 'flex';
-  });
-
-  // ── Main user list ─────────────────────────────────────────────────
-  async function showMain() {
-    document.getElementById('main-screen').style.display = 'block';
-    await loadUsers();
-  }
-
-  async function loadUsers() {
-    const tbody = document.getElementById('user-list');
-    const errEl = document.getElementById('main-error');
-    tbody.innerHTML = '<tr><td colspan="5" class="empty">加载中…</td></tr>';
-    errEl.style.display = 'none';
-
-    try {
-      const res = await fetch('/api/auth/users', { headers: { Authorization: 'Bearer ' + authToken } });
-      if (!res.ok) throw new Error('获取用户列表失败');
-      const users = await res.json();
-      if (!users.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty">暂无用户</td></tr>'; return; }
-
-      tbody.innerHTML = users.map(u => `
-        <tr>
-          <td><strong>${esc(u.name)}</strong></td>
-          <td style="color:#64748b">${esc(u.email)}</td>
-          <td><span class="role-badge role-${u.role}">${roleLabel(u.role)}</span></td>
-          <td style="color:#94a3b8;font-size:12px">${u.departmentId ? u.departmentId.slice(0, 8) + '…' : '—'}</td>
-          <td style="text-align:right">
-            <button class="btn-sm btn-warn" onclick="resetPassword('${u.id}','${esc(u.name)}')">重置密码</button>
-          </td>
-        </tr>
-      `).join('');
-    } catch (err) {
-      errEl.textContent = err.message; errEl.style.display = 'block';
-      tbody.innerHTML = '<tr><td colspan="5" class="empty">加载失败</td></tr>';
-    }
-  }
-
-  async function resetPassword(userId, userName) {
-    if (!confirm(`确认要重置「${userName}」的密码吗？该用户登录后需立即修改密码。`)) return;
-    try {
-      const res = await fetch(`/api/auth/users/${userId}/reset-password`, {
-        method: 'POST', headers: { Authorization: 'Bearer ' + authToken, 'Content-Type': 'application/json' },
-        body: '{}',
-      });
-      const data = await res.json();
-      if (!res.ok) { alert('重置失败：' + (data.error || '未知错误')); return; }
-      showModal(userName, data.tempPassword);
-    } catch {
-      alert('网络错误，请重试');
-    }
-  }
-
-  // ── Modal ──────────────────────────────────────────────────────────
-  function showModal(name, pass) {
-    document.getElementById('modal-name').textContent = name;
-    document.getElementById('modal-pass').textContent = pass;
-    document.getElementById('modal').style.display = 'flex';
-  }
-  document.getElementById('modal-close').addEventListener('click', () => {
-    document.getElementById('modal').style.display = 'none';
-  });
-  document.getElementById('copy-btn').addEventListener('click', () => {
-    const pass = document.getElementById('modal-pass').textContent;
-    navigator.clipboard.writeText(pass).then(() => {
-      const btn = document.getElementById('copy-btn');
-      btn.textContent = '已复制 ✓'; btn.style.background = '#d1fae5'; btn.style.color = '#065f46';
-      setTimeout(() => { btn.textContent = '复制密码'; btn.style.background = ''; btn.style.color = ''; }, 2000);
-    });
-  });
-  document.getElementById('modal').addEventListener('click', (e) => {
-    if (e.target === document.getElementById('modal')) document.getElementById('modal').style.display = 'none';
-  });
-
-  // ── Helpers ────────────────────────────────────────────────────────
-  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-  function roleLabel(r) { return { ADMIN:'管理员', DEPARTMENT_ADMIN:'部门管理员', MEMBER:'成员' }[r] || r; }
-
-  init();
-</script>
+<script src="/admin-users.js"></script>
 </body>
 </html>
