@@ -1,17 +1,22 @@
 /* ── 暗色模式补丁 ── 修复 Ant Design 组件在 dark-mode 下的显示问题 ── */
 
-/* 优先级卡片渐变：暗色下去除浅色背景 */
+/* 暗色模式：看板卡片强制深色背景 */
+body.dark-mode .kanban-card {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border-color: #30363d !important;
+}
 body.dark-mode .kanban-card.priority-urgent,
 body.dark-mode .kanban-card.priority-high {
-  background: var(--bg-card);
+  background: var(--bg-card) !important;
 }
 body.dark-mode .kanban-card.priority-urgent {
-  border-left-color: var(--color-danger);
-  box-shadow: inset 3px 0 0 var(--color-danger), var(--shadow-card);
+  border-left-color: var(--color-danger) !important;
+  box-shadow: inset 3px 0 0 var(--color-danger), var(--shadow-card) !important;
 }
 body.dark-mode .kanban-card.priority-high {
-  border-left-color: var(--color-warning);
-  box-shadow: inset 3px 0 0 var(--color-warning), var(--shadow-card);
+  border-left-color: var(--color-warning) !important;
+  box-shadow: inset 3px 0 0 var(--color-warning), var(--shadow-card) !important;
 }
 
 /* 输入框 / 文本域 */
@@ -716,8 +721,7 @@ body:not(.dark-mode) .ant-badge-count {
   box-shadow: 0 0 0 1px #fff !important;
 }
 
-/* 亮色模式：body 基础文字色（防止 dark-mode 样式溢出） */
+/* 亮色模式：body 基础文字色（防止 dark-mode 文字色溢出到亮色视图） */
 body:not(.dark-mode) {
   color: rgba(0,0,0,.88);
-  background-color: #f5f5f7;
 }
