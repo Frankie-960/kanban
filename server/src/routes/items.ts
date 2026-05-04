@@ -121,7 +121,14 @@ router.get('/summary', async (req: AuthRequest, res) => {
     const where = buildItemWhere(req.userId!, currentUser.departmentId, req.query);
 
     const now = new Date();
-    const [totals, byCategory, byStatus, allItems] = await Promise.all([
+
+    // Natural month boundaries
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    const monthEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    const monthWhere = { ...where, createdAt: { gte: monthStart, lte: monthEnd } };
+    const monthLabel = `${now.getFullYear()}年${now.getMonth() + 1}月`;
+
+    const [totals, byCategory, byStatus, allItems, monthlyItems] = await Promise.all([
       prisma.item.aggregate({
         where,
         _count: { id: true },
@@ -142,6 +149,10 @@ router.get('/summary', async (req: AuthRequest, res) => {
         where,
         select: { id: true, title: true, estimatedAmount: true, finalAmount: true, status: true, currency: true, dueDate: true },
       }),
+      prisma.item.findMany({
+        where: monthWhere,
+        select: { id: true, estimatedAmount: true, finalAmount: true, status: true, dueDate: true },
+      }),
     ]);
 
     const overBudgetItems = allItems.filter(
@@ -154,6 +165,20 @@ router.get('/summary', async (req: AuthRequest, res) => {
 
     const totalEst = totals._sum.estimatedAmount ?? 0;
     const totalFinal = totals._sum.finalAmount ?? 0;
+
+    // Monthly aggregation
+    const monthlyCompletedItems = monthlyItems.filter((i) => i.status === 'COMPLETED');
+    const monthlySavedAmount = monthlyCompletedItems.reduce((sum, i) => {
+      if (i.estimatedAmount !== null && i.finalAmount !== null && i.estimatedAmount > i.finalAmount) {
+        return sum + (i.estimatedAmount - i.finalAmount);
+      }
+      return sum;
+    }, 0);
+    const monthlyEst   = monthlyItems.reduce((s, i) => s + (i.estimatedAmount ?? 0), 0);
+    const monthlyFinal = monthlyItems.reduce((s, i) => s + (i.finalAmount ?? 0), 0);
+    const monthlyOverdueCount = monthlyItems.filter(
+      (i) => i.status !== 'COMPLETED' && i.dueDate && new Date(i.dueDate) < now
+    ).length;
 
     res.json({
       totals: {
@@ -168,6 +193,20 @@ router.get('/summary', async (req: AuthRequest, res) => {
       byCategory,
       byStatus,
       overBudgetItems,
+      monthly: {
+        count: monthlyItems.length,
+        completedCount: monthlyCompletedItems.length,
+        inProgressCount: monthlyItems.filter((i) => i.status === 'IN_PROGRESS').length,
+        overdueCount: monthlyOverdueCount,
+        estimatedAmount: monthlyEst,
+        finalAmount: monthlyFinal,
+        savedAmount: monthlySavedAmount,
+        period: {
+          start: monthStart.toISOString(),
+          end:   monthEnd.toISOString(),
+          label: monthLabel,
+        },
+      },
     });
   } catch {
     res.status(500).json({ error: 'Failed to fetch summary' });
@@ -224,6 +263,8 @@ router.post('/', async (req: AuthRequest, res) => {
         progress: data.progress || null,
         priority: data.priority || 'MEDIUM',
         category: data.category || 'OTHER',
+        status: data.status || 'TODO',
+        subStatus: data.subStatus || null,
         dueDate: data.dueDate ? new Date(data.dueDate) : null,
         visibility: data.visibility || 'PRIVATE',
         departmentId: data.departmentId,

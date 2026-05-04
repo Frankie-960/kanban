@@ -60,9 +60,9 @@
     var bar = document.createElement('div');
     bar.id = 'kpi-bar';
     bar.innerHTML =
-      '<span class="kpi-label" style="font-weight:600;color:var(--text-primary)">📊 采购概况</span>' +
+      '<span class="kpi-label" id="kpi-title" style="font-weight:600;color:var(--text-primary)">📊 本月采购概况</span>' +
       '<div class="kpi-card" id="kpi-total">' +
-        '<span class="kpi-label">总任务</span>' +
+        '<span class="kpi-label">本月任务</span>' +
         '<span class="kpi-value" id="kv-total">—</span>' +
       '</div>' +
       '<div class="kpi-card kpi-completed" id="kpi-done">' +
@@ -81,6 +81,10 @@
         '<span class="kpi-label">预估金额</span>' +
         '<span class="kpi-value" id="kv-est">—</span>' +
       '</div>' +
+      '<div class="kpi-card kpi-save" id="kpi-save">' +
+        '<span class="kpi-label">💰 节约金额</span>' +
+        '<span class="kpi-value" id="kv-save">—</span>' +
+      '</div>' +
       '<div class="kpi-spacer"></div>' +
       '<button class="kpi-report-btn" id="kpi-report-btn">⚡ 快速生成月报</button>';
     return bar;
@@ -88,30 +92,58 @@
 
   function updateKpiData(bar) {
     apiFetch('/api/items/summary', function (data) {
-      if (!data || !data.totals) return;
-      var t = data.totals;
-      var byStatus = data.byStatus || [];
+      if (!data) return;
+      var m = data.monthly;
+      // fall back to totals + byStatus for servers not yet updated
+      if (!m) {
+        if (!data.totals) return;
+        var t = data.totals;
+        var byStatus = data.byStatus || [];
+        var doneCount = 0, progressCount = 0;
+        byStatus.forEach(function (s) {
+          if (s.status === 'COMPLETED')  doneCount    = s._count.id;
+          if (s.status === 'IN_PROGRESS') progressCount = s._count.id;
+        });
+        bar.querySelector('#kv-total').textContent    = t.count || 0;
+        bar.querySelector('#kv-done').textContent     = doneCount;
+        bar.querySelector('#kv-progress').textContent = progressCount;
+        bar.querySelector('#kv-overdue').textContent  = t.overdueCount || 0;
+        bar.querySelector('#kv-est').textContent      = fmtMoney(t.estimatedAmount);
+        bar.querySelector('#kv-save').textContent     = '—';
+        return;
+      }
 
-      var doneCount = 0, progressCount = 0;
-      byStatus.forEach(function (s) {
-        if (s.status === 'COMPLETED')  doneCount    = s._count.id;
-        if (s.status === 'IN_PROGRESS') progressCount = s._count.id;
-      });
+      // Update title with month label
+      var titleEl = bar.querySelector('#kpi-title');
+      if (titleEl && m.period && m.period.label) {
+        titleEl.textContent = '📊 ' + m.period.label + ' 采购概况';
+      }
 
-      bar.querySelector('#kv-total').textContent    = t.count || 0;
-      bar.querySelector('#kv-done').textContent     = doneCount;
-      bar.querySelector('#kv-progress').textContent = progressCount;
-      bar.querySelector('#kv-overdue').textContent  = t.overdueCount || 0;
-      bar.querySelector('#kv-est').textContent      = fmtMoney(t.estimatedAmount);
+      bar.querySelector('#kv-total').textContent    = m.count || 0;
+      bar.querySelector('#kv-done').textContent     = m.completedCount || 0;
+      bar.querySelector('#kv-progress').textContent = m.inProgressCount || 0;
+      bar.querySelector('#kv-overdue').textContent  = m.overdueCount || 0;
+      bar.querySelector('#kv-est').textContent      = fmtMoney(m.estimatedAmount);
+      bar.querySelector('#kv-save').textContent     = m.savedAmount > 0 ? fmtMoney(m.savedAmount) : '—';
 
       // 逾期数 > 0 时闪红
       var overdueCard = bar.querySelector('#kpi-overdue');
-      if (t.overdueCount > 0) {
+      if (m.overdueCount > 0) {
         overdueCard.style.background = 'rgba(255,69,58,.12)';
         overdueCard.style.border = '1px solid rgba(255,69,58,.3)';
       } else {
         overdueCard.style.background = '';
         overdueCard.style.border = '';
+      }
+
+      // 节约金额 > 0 时标绿
+      var saveCard = bar.querySelector('#kpi-save');
+      if (m.savedAmount > 0) {
+        saveCard.style.background = 'rgba(52,199,89,.10)';
+        saveCard.style.border = '1px solid rgba(52,199,89,.25)';
+      } else {
+        saveCard.style.background = '';
+        saveCard.style.border = '';
       }
     });
   }

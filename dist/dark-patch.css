@@ -441,6 +441,7 @@ body.dark-mode .kpi-card:hover {
 .kpi-card.kpi-overdue .kpi-value { color: var(--color-danger); }
 .kpi-card.kpi-completed .kpi-value { color: var(--color-success); }
 .kpi-card.kpi-amount .kpi-value { color: var(--color-primary); }
+.kpi-card.kpi-save .kpi-value { color: var(--color-success); }
 .kpi-spacer { flex: 1; }
 .kpi-report-btn {
   padding: 6px 16px;
@@ -608,4 +609,115 @@ body:not(.dark-mode) .kanban-card.priority-urgent {
 }
 body:not(.dark-mode) .kanban-card.priority-high {
   background: linear-gradient(135deg,#fff7e6 0%,#fff 50%) !important;
+}
+
+/* 亮色模式：统计数字 Statistic */
+body:not(.dark-mode) .ant-statistic-title {
+  color: rgba(0,0,0,.45) !important;
+}
+body:not(.dark-mode) .ant-statistic-content,
+body:not(.dark-mode) .ant-statistic-content-value,
+body:not(.dark-mode) .ant-statistic-content-suffix,
+body:not(.dark-mode) .ant-statistic-content-prefix {
+  color: rgba(0,0,0,.88) !important;
+}
+
+/* 亮色模式：列表 List */
+body:not(.dark-mode) .ant-list-item {
+  color: rgba(0,0,0,.88) !important;
+  border-color: #f0f0f0 !important;
+}
+body:not(.dark-mode) .ant-list-item-meta-title {
+  color: rgba(0,0,0,.88) !important;
+}
+body:not(.dark-mode) .ant-list-item-meta-description {
+  color: rgba(0,0,0,.45) !important;
+}
+
+/* 亮色模式：描述列表 Descriptions */
+body:not(.dark-mode) .ant-descriptions-title {
+  color: rgba(0,0,0,.88) !important;
+}
+body:not(.dark-mode) .ant-descriptions-item-label {
+  color: rgba(0,0,0,.45) !important;
+  background: #fafafa !important;
+}
+body:not(.dark-mode) .ant-descriptions-item-content {
+  color: rgba(0,0,0,.88) !important;
+  background: #fff !important;
+}
+body:not(.dark-mode) .ant-descriptions-view {
+  border-color: #f0f0f0 !important;
+}
+
+/* 亮色模式：抽屉 Drawer */
+body:not(.dark-mode) .ant-drawer-content {
+  background: #fff !important;
+}
+body:not(.dark-mode) .ant-drawer-header {
+  background: #fff !important;
+  border-bottom-color: #f0f0f0 !important;
+}
+body:not(.dark-mode) .ant-drawer-title {
+  color: rgba(0,0,0,.88) !important;
+}
+
+/* 亮色模式：排版 Typography */
+body:not(.dark-mode) .ant-typography {
+  color: rgba(0,0,0,.88) !important;
+}
+body:not(.dark-mode) h1.ant-typography,
+body:not(.dark-mode) h2.ant-typography,
+body:not(.dark-mode) h3.ant-typography,
+body:not(.dark-mode) h4.ant-typography,
+body:not(.dark-mode) h5.ant-typography {
+  color: rgba(0,0,0,.88) !important;
+}
+body:not(.dark-mode) .ant-typography.ant-typography-secondary {
+  color: rgba(0,0,0,.45) !important;
+}
+
+/* 亮色模式：表单标签 Form */
+body:not(.dark-mode) .ant-form-item-label > label {
+  color: rgba(0,0,0,.88) !important;
+}
+body:not(.dark-mode) .ant-form-item-explain-error {
+  color: #ff4d4f !important;
+}
+
+/* 亮色模式：进度条 Progress */
+body:not(.dark-mode) .ant-progress-inner {
+  background: #f5f5f5 !important;
+}
+
+/* 亮色模式：空状态 */
+body:not(.dark-mode) .ant-empty-description {
+  color: rgba(0,0,0,.45) !important;
+}
+
+/* 亮色模式：Tooltip / Popover */
+body:not(.dark-mode) .ant-tooltip-inner {
+  background: rgba(0,0,0,.75) !important;
+  color: #fff !important;
+}
+body:not(.dark-mode) .ant-popover-inner {
+  background: #fff !important;
+}
+body:not(.dark-mode) .ant-popover-title {
+  color: rgba(0,0,0,.88) !important;
+  border-bottom-color: #f0f0f0 !important;
+}
+body:not(.dark-mode) .ant-popover-inner-content {
+  color: rgba(0,0,0,.88) !important;
+}
+
+/* 亮色模式：通知/徽章 */
+body:not(.dark-mode) .ant-badge-count {
+  box-shadow: 0 0 0 1px #fff !important;
+}
+
+/* 亮色模式：body 基础文字色（防止 dark-mode 样式溢出） */
+body:not(.dark-mode) {
+  color: rgba(0,0,0,.88);
+  background-color: #f5f5f7;
 }

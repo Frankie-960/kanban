@@ -51,7 +51,7 @@ async function ensureUser(user) {
 // 运行时状态
 let adminToken = '', u1Token = '', u2Token = '';
 let adminId = '', u1Id = '', u2Id = '';
-let itemId = '', item2Id = '';
+let itemId = '', item2Id = '', monthlyItemId = '';
 let deptId = '', announcementId = '';
 let expId = '', reminderId = '';
 let subStatusId = '', categoryId = '';
@@ -978,6 +978,65 @@ async function waitForServer(retries = 6, delay = 1500) {
   });
 
   // ═══════════════════════════════════════════════════════════════════════════
+  section('月度统计 & 节约金额 (T116-T120)');
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  await test('T116', 'GET /api/auth/me — token 有效时返回用户', async () => {
+    const r = await api('GET', '/api/auth/me', undefined, u1Token);
+    expectStatus(r, 200);
+    ok(r.data.id === u1Id, `userId 不匹配: ${r.data.id}`);
+    ok(r.data.email === U1.email, `email 不匹配: ${r.data.email}`);
+  });
+
+  await test('T117', 'GET /api/items/summary — monthly 字段结构正确', async () => {
+    const r = await api('GET', '/api/items/summary', undefined, u1Token);
+    expectStatus(r, 200);
+    ok(r.data.monthly && typeof r.data.monthly === 'object', '缺少 monthly 字段');
+    ok(typeof r.data.monthly.count === 'number', 'monthly.count 应为数字');
+    ok(typeof r.data.monthly.completedCount === 'number', 'monthly.completedCount 应为数字');
+    ok(typeof r.data.monthly.inProgressCount === 'number', 'monthly.inProgressCount 应为数字');
+    ok(typeof r.data.monthly.overdueCount === 'number', 'monthly.overdueCount 应为数字');
+    ok(typeof r.data.monthly.estimatedAmount === 'number', 'monthly.estimatedAmount 应为数字');
+    ok(typeof r.data.monthly.finalAmount === 'number', 'monthly.finalAmount 应为数字');
+    ok(typeof r.data.monthly.savedAmount === 'number', 'monthly.savedAmount 应为数字');
+    ok(r.data.monthly.period && typeof r.data.monthly.period.label === 'string', 'monthly.period.label 应为字符串');
+    ok(r.data.monthly.period.start && r.data.monthly.period.end, 'monthly.period.start/end 应存在');
+  });
+
+  await test('T118', 'GET /api/items/summary — 自然月边界正确 (1日起始)', async () => {
+    const r = await api('GET', '/api/items/summary', undefined, u1Token);
+    expectStatus(r, 200);
+    const start = new Date(r.data.monthly.period.start);
+    ok(start.getDate() === 1, `月份开始应为第1天，实际: ${start.getDate()}`);
+    ok(start.getHours() === 0 && start.getMinutes() === 0 && start.getSeconds() === 0,
+      `开始时间应为 00:00:00，实际: ${start.getHours()}:${start.getMinutes()}:${start.getSeconds()}`);
+    const end = new Date(r.data.monthly.period.end);
+    ok(end > start, '月末时间应晚于月初');
+    const label = r.data.monthly.period.label;
+    ok(/^\d{4}年\d{1,2}月$/.test(label), `label 格式应为 YYYY年M月，实际: "${label}"`);
+  });
+
+  await test('T119', 'POST /api/items — 创建节约金额测试项', async () => {
+    const r = await api('POST', '/api/items', {
+      title: `[TEST] 节约金额测试 ${RUN}`,
+      estimatedAmount: 100000,
+      finalAmount: 80000,
+      status: 'COMPLETED',
+    }, u1Token);
+    ok(r.status === 200 || r.status === 201, `期望 200/201，实际 ${r.status}: ${JSON.stringify(r.data)}`);
+    ok(r.data && r.data.id, '响应缺少 id');
+    monthlyItemId = r.data.id;
+  });
+
+  await test('T120', 'GET /api/items/summary — 节约金额计算正确', async () => {
+    const r = await api('GET', '/api/items/summary', undefined, u1Token);
+    expectStatus(r, 200);
+    ok(r.data.monthly.savedAmount >= 20000,
+      `savedAmount(${r.data.monthly.savedAmount}) 应 >= 20000 (est=100000 final=80000 节约=20000)`);
+    ok(r.data.monthly.completedCount >= 1, `completedCount(${r.data.monthly.completedCount}) 应 >= 1`);
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
   section('清理测试数据');
   // ═══════════════════════════════════════════════════════════════════════════
 
@@ -990,6 +1049,12 @@ async function waitForServer(retries = 6, delay = 1500) {
   await test('T115', '删除工作项 1 (主测试项)', async () => {
     if (!itemId) return;
     const r = await api('DELETE', `/api/items/${itemId}`, undefined, u1Token);
+    ok(r.status === 200 || r.status === 204, `期望 200/204，实际 ${r.status}`);
+  });
+
+  await test('T121', '删除节约金额测试项', async () => {
+    if (!monthlyItemId) return;
+    const r = await api('DELETE', `/api/items/${monthlyItemId}`, undefined, u1Token);
     ok(r.status === 200 || r.status === 204, `期望 200/204，实际 ${r.status}`);
   });
 
