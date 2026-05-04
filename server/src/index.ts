@@ -13,6 +13,7 @@ import experienceRoutes from './routes/experiences';
 import reportRoutes from './routes/reports';
 import subStatusRoutes from './routes/subStatus';
 import categoryRoutes from './routes/categories';
+import voiceRoutes from './routes/voice';
 import { errorHandler } from './middleware/errorHandler';
 import { prisma } from './utils/prisma';
 
@@ -55,6 +56,13 @@ const reportLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+const voiceLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  message: { error: 'Too many voice requests, please wait a moment' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 const forgotPasswordLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 3,
@@ -75,9 +83,10 @@ app.use('/api/auth/register', registerLimiter);
 app.use('/api/auth/forgot-password', forgotPasswordLimiter);
 app.use('/api/auth/reset-password', resetPasswordLimiter);
 app.use('/api/reports/generate', reportLimiter);
+app.use('/api/voice', voiceLimiter);
 
-// Body parser with size limit (AI report content can be large)
-app.use(express.json({ limit: '2mb' }));
+// Body parser — 4mb to accommodate base64-encoded audio (voice feature)
+app.use(express.json({ limit: '4mb' }));
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -88,6 +97,7 @@ app.use('/api/experiences', experienceRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/sub-status', subStatusRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/voice', voiceRoutes);
 
 // Health check — probes the database connection
 app.get('/api/health', async (_, res) => {

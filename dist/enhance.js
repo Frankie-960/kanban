@@ -249,6 +249,192 @@
     if (el) { el.remove(); adminBtnShown = false; }
   }
 
+  // ── 语音助手 ──────────────────────────────────────────────────────────────
+  var voiceBtn = null;
+  var voiceBtnShown = false;
+  var mediaRec = null;
+  var audioChunks = [];
+  var voiceState = 'idle'; // 'idle' | 'recording' | 'processing'
+
+  var VOICE_ICONS = {
+    idle: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>',
+    recording: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>',
+    processing: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>',
+  };
+
+  function injectVoiceStyles() {
+    if (document.getElementById('voice-fab-style')) return;
+    var s = document.createElement('style');
+    s.id = 'voice-fab-style';
+    s.textContent = [
+      '@keyframes voice-spin{to{transform:rotate(360deg)}}',
+      '@keyframes voice-fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}',
+      '@keyframes voice-pulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.5)}50%{box-shadow:0 0 0 8px rgba(239,68,68,0)}}',
+    ].join('');
+    document.head.appendChild(s);
+  }
+
+  function buildVoiceBtn() {
+    var btn = document.createElement('button');
+    btn.id = 'voice-fab';
+    btn.title = '语音指令';
+    btn.style.cssText = [
+      'position:fixed;bottom:80px;right:28px;z-index:9999',
+      'width:46px;height:46px;border-radius:50%;border:none;cursor:pointer',
+      'display:flex;align-items:center;justify-content:center',
+      'background:#2563eb;color:#fff',
+      'box-shadow:0 4px 16px rgba(37,99,235,.4)',
+      'transition:background .15s,transform .15s',
+    ].join(';');
+    btn.innerHTML = VOICE_ICONS.idle;
+    btn.onclick = handleVoiceClick;
+    return btn;
+  }
+
+  function setVoiceBtnState(state) {
+    voiceState = state;
+    if (!voiceBtn) return;
+    if (state === 'idle') {
+      voiceBtn.style.background = '#2563eb';
+      voiceBtn.style.transform = 'scale(1)';
+      voiceBtn.style.animation = '';
+      voiceBtn.innerHTML = VOICE_ICONS.idle;
+    } else if (state === 'recording') {
+      voiceBtn.style.background = '#ef4444';
+      voiceBtn.style.transform = 'scale(1.08)';
+      voiceBtn.style.animation = 'voice-pulse 1.2s ease infinite';
+      voiceBtn.innerHTML = VOICE_ICONS.recording;
+    } else if (state === 'processing') {
+      voiceBtn.style.background = '#6b7280';
+      voiceBtn.style.transform = 'scale(1)';
+      voiceBtn.style.animation = '';
+      voiceBtn.innerHTML = '<span style="display:inline-flex;animation:voice-spin 1s linear infinite">' + VOICE_ICONS.processing + '</span>';
+    }
+  }
+
+  function showVoiceToast(msg, color) {
+    var old = document.getElementById('voice-toast');
+    if (old) old.remove();
+    var t = document.createElement('div');
+    t.id = 'voice-toast';
+    t.style.cssText = [
+      'position:fixed;bottom:136px;right:28px;z-index:10000',
+      'background:' + (color || '#1e293b') + ';color:#fff',
+      'padding:9px 14px;border-radius:10px;font-size:13px;line-height:1.5',
+      'box-shadow:0 4px 16px rgba(0,0,0,.3);max-width:220px',
+      'animation:voice-fadein .2s ease',
+    ].join(';');
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function () { if (t.parentNode) t.remove(); }, 3500);
+  }
+
+  function blobToBase64(blob) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () { resolve(reader.result.split(',')[1]); };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  function executeVoiceCommand(cmd) {
+    var token = getToken();
+    if (cmd.action === 'create') {
+      var title = (cmd.title || '').trim() || '语音新建任务';
+      var body = { title: title, priority: cmd.priority || 'MEDIUM' };
+      if (cmd.dueDate && cmd.dueDate !== 'null') body.dueDate = new Date(cmd.dueDate).toISOString();
+      fetch('/api/items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify(body),
+      }).then(function (r) {
+        if (r.ok) showVoiceToast('✅ 已新建：' + title, '#16a34a');
+        else showVoiceToast('❌ 新建失败，请重试', '#dc2626');
+      }).catch(function () { showVoiceToast('❌ 网络错误', '#dc2626'); });
+    } else if (cmd.action === 'unknown') {
+      showVoiceToast('🎤 听到了：' + (cmd.text || '未识别'), '#2563eb');
+    } else {
+      showVoiceToast('🎤 指令：' + cmd.action + (cmd.keyword ? ' — ' + cmd.keyword : ''), '#2563eb');
+    }
+  }
+
+  function handleVoiceClick() {
+    if (voiceState === 'processing') return;
+
+    if (voiceState === 'recording') {
+      if (mediaRec && mediaRec.state !== 'inactive') mediaRec.stop();
+      return;
+    }
+
+    // Check MediaRecorder support
+    if (!navigator.mediaDevices || !window.MediaRecorder) {
+      showVoiceToast('❌ 当前浏览器不支持录音', '#dc2626');
+      return;
+    }
+
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+      audioChunks = [];
+      var mimeType = '';
+      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) mimeType = 'audio/webm;codecs=opus';
+      else if (MediaRecorder.isTypeSupported('audio/webm')) mimeType = 'audio/webm';
+      else if (MediaRecorder.isTypeSupported('audio/mp4')) mimeType = 'audio/mp4';
+
+      var options = mimeType ? { mimeType: mimeType } : {};
+      mediaRec = new MediaRecorder(stream, options);
+      var actualMime = mediaRec.mimeType || mimeType || 'audio/webm';
+
+      mediaRec.ondataavailable = function (e) { if (e.data.size > 0) audioChunks.push(e.data); };
+      mediaRec.onstop = function () {
+        stream.getTracks().forEach(function (t) { t.stop(); });
+        setVoiceBtnState('processing');
+        showVoiceToast('⏳ 识别中…', '#6b7280');
+        var blob = new Blob(audioChunks, { type: actualMime });
+        blobToBase64(blob).then(function (b64) {
+          var token = getToken();
+          return fetch('/api/voice', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ audio: b64, mimeType: actualMime.split(';')[0] }),
+          });
+        }).then(function (r) { return r.json(); }).then(function (cmd) {
+          setVoiceBtnState('idle');
+          executeVoiceCommand(cmd);
+        }).catch(function () {
+          setVoiceBtnState('idle');
+          showVoiceToast('❌ 识别失败，请重试', '#dc2626');
+        });
+      };
+
+      mediaRec.start();
+      setVoiceBtnState('recording');
+      showVoiceToast('🎤 录音中… 再次点击停止', '#ef4444');
+
+      // Auto-stop after 30 seconds
+      setTimeout(function () {
+        if (voiceState === 'recording' && mediaRec && mediaRec.state !== 'inactive') mediaRec.stop();
+      }, 30000);
+    }).catch(function () {
+      showVoiceToast('❌ 无法访问麦克风，请检查权限', '#dc2626');
+    });
+  }
+
+  function showVoiceBtn() {
+    if (voiceBtnShown) return;
+    var token = getToken();
+    if (!token || isTokenExpired()) return;
+    injectVoiceStyles();
+    voiceBtn = buildVoiceBtn();
+    document.body.appendChild(voiceBtn);
+    voiceBtnShown = true;
+  }
+
+  function hideVoiceBtn() {
+    if (voiceBtn) { voiceBtn.remove(); voiceBtn = null; }
+    voiceBtnShown = false;
+    voiceState = 'idle';
+  }
+
   // ── 路由检测与更新 ────────────────────────────────────────────────────────
   var lastPath = location.pathname;
   // 粘性标志：本次页面导航期间是否曾出现过密码框（防止"眼睛"切换 type 导致误判）
@@ -280,6 +466,7 @@
       showForgotLink();
       hideKpiBar();
       hideAdminBtn();
+      hideVoiceBtn();
       return;
     }
 
@@ -288,12 +475,14 @@
     if (!loggedIn) {
       hideKpiBar();
       hideAdminBtn();
+      hideVoiceBtn();
       return;
     }
 
-    // 已登录且无登录表单：显示 KPI 栏和管理员按钮
+    // 已登录且无登录表单：显示 KPI 栏、管理员按钮和语音按钮
     showKpiBar();
     showAdminBtn();
+    showVoiceBtn();
   }
 
   // 拦截 SPA 路由跳转
