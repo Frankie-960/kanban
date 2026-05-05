@@ -249,12 +249,13 @@
     if (el) { el.remove(); adminBtnShown = false; }
   }
 
-  // ── 语音助手 ──────────────────────────────────────────────────────────────
+  // ── 语音助手（MediaRecorder + Paraformer ASR + qwen-turbo）──────────────
   var voiceBtn = null;
   var voiceBtnShown = false;
   var mediaRec = null;
   var audioChunks = [];
   var voiceState = 'idle'; // 'idle' | 'recording' | 'processing'
+  var voiceAutoStopTimer = null;
 
   var VOICE_ICONS = {
     idle: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>',
@@ -329,21 +330,20 @@
     setTimeout(function () { if (t.parentNode) t.remove(); }, 3500);
   }
 
-  function blobToBase64(blob) {
-    return new Promise(function (resolve, reject) {
-      var reader = new FileReader();
-      reader.onload = function () { resolve(reader.result.split(',')[1]); };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  }
-
   function executeVoiceCommand(cmd) {
+    if (cmd.error) { showVoiceToast('❌ ' + cmd.error, '#dc2626'); return; }
     var token = getToken();
     if (cmd.action === 'create') {
       var title = (cmd.title || '').trim() || '语音新建任务';
       var body = { title: title, priority: cmd.priority || 'MEDIUM' };
-      if (cmd.dueDate && cmd.dueDate !== 'null') body.dueDate = new Date(cmd.dueDate).toISOString();
+      if (cmd.dueDate && cmd.dueDate !== 'null') {
+        try { body.dueDate = new Date(cmd.dueDate).toISOString(); } catch (e) {}
+      }
+      if (cmd.category && cmd.category !== 'null') body.category = cmd.category;
+      if (cmd.description && cmd.description !== 'null') body.description = cmd.description;
+      if (cmd.estimatedAmount != null && cmd.estimatedAmount !== 'null') body.estimatedAmount = cmd.estimatedAmount;
+      if (cmd.supplierName && cmd.supplierName !== 'null') body.supplierName = cmd.supplierName;
+      if (cmd.supplierAmount != null && cmd.supplierAmount !== 'null') body.supplierAmount = cmd.supplierAmount;
       fetch('/api/items', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
@@ -352,22 +352,25 @@
         if (r.ok) showVoiceToast('✅ 已新建：' + title, '#16a34a');
         else showVoiceToast('❌ 新建失败，请重试', '#dc2626');
       }).catch(function () { showVoiceToast('❌ 网络错误', '#dc2626'); });
+    } else if (cmd.action === 'update_status') {
+      showVoiceToast('🎤 更新指令：' + (cmd.keyword || '') + ' → ' + (cmd.status || ''), '#2563eb');
     } else if (cmd.action === 'unknown') {
-      showVoiceToast('🎤 听到了：' + (cmd.text || '未识别'), '#2563eb');
+      showVoiceToast('🎤 未理解：' + (cmd.text || '请重新说'), '#6b7280');
     } else {
-      showVoiceToast('🎤 指令：' + cmd.action + (cmd.keyword ? ' — ' + cmd.keyword : ''), '#2563eb');
+      showVoiceToast('🎤 ' + JSON.stringify(cmd), '#2563eb');
     }
   }
 
   function handleVoiceClick() {
     if (voiceState === 'processing') return;
 
+    // 录音中：点击停止
     if (voiceState === 'recording') {
+      clearTimeout(voiceAutoStopTimer);
       if (mediaRec && mediaRec.state !== 'inactive') mediaRec.stop();
       return;
     }
 
-    // Check MediaRecorder support
     if (!navigator.mediaDevices || !window.MediaRecorder) {
       showVoiceToast('❌ 当前浏览器不支持录音', '#dc2626');
       return;
@@ -375,43 +378,43 @@
 
     navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
       audioChunks = [];
-      var mimeType = '';
-      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) mimeType = 'audio/webm;codecs=opus';
-      else if (MediaRecorder.isTypeSupported('audio/webm')) mimeType = 'audio/webm';
-      else if (MediaRecorder.isTypeSupported('audio/mp4')) mimeType = 'audio/mp4';
-
-      var options = mimeType ? { mimeType: mimeType } : {};
-      mediaRec = new MediaRecorder(stream, options);
-      var actualMime = mediaRec.mimeType || mimeType || 'audio/webm';
+      var mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus'
+                   : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm'
+                   : MediaRecorder.isTypeSupported('audio/mp4')  ? 'audio/mp4' : '';
+      var opts = mimeType ? { mimeType: mimeType } : {};
+      mediaRec = new MediaRecorder(stream, opts);
+      var actualMime = (mediaRec.mimeType || mimeType || 'audio/webm').split(';')[0];
 
       mediaRec.ondataavailable = function (e) { if (e.data.size > 0) audioChunks.push(e.data); };
       mediaRec.onstop = function () {
         stream.getTracks().forEach(function (t) { t.stop(); });
         setVoiceBtnState('processing');
-        showVoiceToast('⏳ 识别中…', '#6b7280');
+        showVoiceToast('⏳ 识别中，请稍候…', '#6b7280');
         var blob = new Blob(audioChunks, { type: actualMime });
-        blobToBase64(blob).then(function (b64) {
+        var reader = new FileReader();
+        reader.onload = function () {
+          var b64 = reader.result.split(',')[1];
           var token = getToken();
-          return fetch('/api/voice', {
+          fetch('/api/voice', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-            body: JSON.stringify({ audio: b64, mimeType: actualMime.split(';')[0] }),
+            body: JSON.stringify({ audio: b64, mimeType: actualMime }),
+          }).then(function (r) { return r.json(); }).then(function (cmd) {
+            setVoiceBtnState('idle');
+            executeVoiceCommand(cmd);
+          }).catch(function () {
+            setVoiceBtnState('idle');
+            showVoiceToast('❌ 识别失败，请重试', '#dc2626');
           });
-        }).then(function (r) { return r.json(); }).then(function (cmd) {
-          setVoiceBtnState('idle');
-          executeVoiceCommand(cmd);
-        }).catch(function () {
-          setVoiceBtnState('idle');
-          showVoiceToast('❌ 识别失败，请重试', '#dc2626');
-        });
+        };
+        reader.readAsDataURL(blob);
       };
 
       mediaRec.start();
       setVoiceBtnState('recording');
-      showVoiceToast('🎤 录音中… 再次点击停止', '#ef4444');
-
-      // Auto-stop after 30 seconds
-      setTimeout(function () {
+      showVoiceToast('🎤 录音中… 说完后再次点击', '#ef4444');
+      // 30 秒自动停止
+      voiceAutoStopTimer = setTimeout(function () {
         if (voiceState === 'recording' && mediaRec && mediaRec.state !== 'inactive') mediaRec.stop();
       }, 30000);
     }).catch(function () {
@@ -430,6 +433,9 @@
   }
 
   function hideVoiceBtn() {
+    clearTimeout(voiceAutoStopTimer);
+    if (mediaRec && mediaRec.state !== 'inactive') { try { mediaRec.stop(); } catch (e) {} }
+    mediaRec = null;
     if (voiceBtn) { voiceBtn.remove(); voiceBtn = null; }
     voiceBtnShown = false;
     voiceState = 'idle';
