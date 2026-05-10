@@ -1,5 +1,5 @@
 /**
- * 采购工作看板 — 综合 API 自动化测试脚本
+ * 采购工作站 — 综合 API 自动化测试脚本
  *
  * 用法:  node server/tests/run.cjs
  * 依赖:  Node.js >= 18 (使用内置 fetch)
@@ -122,7 +122,7 @@ async function waitForServer(retries = 6, delay = 1500) {
 // MAIN
 // ═══════════════════════════════════════════════════════════════════════════════
 (async () => {
-  console.log(`\n${B}采购工作看板 — 综合 API 测试${RST}`);
+  console.log(`\n${B}采购工作站 — 综合 API 测试${RST}`);
   console.log(`  服务器: ${BASE}`);
   console.log(`  管理员: ${ADMIN_EMAIL}`);
   console.log(`  运行 ID: ${RUN}\n`);

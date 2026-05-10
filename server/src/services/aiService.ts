@@ -75,6 +75,15 @@ interface ReportContent {
   pendingTasks: number;
   totalTasks: number;
   completionRate: number;
+  totalEstimatedAmount?: number;
+  totalFinalAmount?: number;
+  totalSavings?: number;
+  savingsRate?: number;
+  costAnalysis?: string;
+  currency?: string;
+  supplierStats?: { name: string; itemCount: number; totalAmount: number; level?: string }[];
+  topSupplier?: { name: string; itemCount: number } | null;
+  supplierPerformance?: number;
   categories: {
     name: string;
     tasks: {
@@ -83,6 +92,9 @@ interface ReportContent {
       subStatus?: string;
       progress?: string;
       completedAt?: string;
+      estimatedAmount?: number;
+      finalAmount?: number;
+      supplierName?: string;
       experiences?: string[];
     }[];
   }[];
@@ -138,6 +150,48 @@ function buildPrompt(
   prompt += `- 紧急任务: ${urgentItems.length}\n`;
   prompt += `- 已逾期: ${overdueItems.length}\n`;
   prompt += `- 完成率: ${items.length > 0 ? Math.round((completedItems.length / items.length) * 100) : 0}%\n\n`;
+
+  // Cost data
+  const totalEst = items.reduce((s, i) => s + (i.estimatedAmount || 0), 0);
+  const totalFinal = items.reduce((s, i) => s + (i.finalAmount || 0), 0);
+  const totalSavings = totalEst - totalFinal;
+  const savingsRate = totalEst > 0 ? ((totalEst - totalFinal) / totalEst * 100).toFixed(1) : '0.0';
+  const overBudgetItems = items.filter((i) => i.finalAmount && i.estimatedAmount && i.finalAmount > i.estimatedAmount);
+  const withEstAmount = items.filter((i) => i.estimatedAmount);
+
+  prompt += `【成本分析】💰\n`;
+  prompt += `- 有预估金额的任务数: ${withEstAmount.length}\n`;
+  prompt += `- 预估总金额: ${totalEst.toLocaleString()} 元\n`;
+  prompt += `- 实际成交总金额: ${totalFinal.toLocaleString()} 元\n`;
+  prompt += `- 降本金额: ${totalSavings >= 0 ? '+' : ''}${totalSavings.toLocaleString()} 元\n`;
+  prompt += `- 降本率: ${savingsRate}%\n`;
+  if (overBudgetItems.length > 0) {
+    prompt += `- ⚠️ 超预算事项: ${overBudgetItems.length} 项\n`;
+    for (const item of overBudgetItems) {
+      prompt += `  · ${item.title}: 预估 ${item.estimatedAmount!.toLocaleString()} → 成交 ${item.finalAmount!.toLocaleString()} (超${(item.finalAmount! - item.estimatedAmount!).toLocaleString()}元)\n`;
+    }
+  }
+  prompt += '\n';
+
+  // Supplier data
+  const suppliers = new Map<string, { count: number; amount: number }>();
+  for (const item of items) {
+    if (item.supplierName) {
+      const s = suppliers.get(item.supplierName) || { count: 0, amount: 0 };
+      s.count++;
+      s.amount += item.supplierAmount || item.finalAmount || 0;
+      suppliers.set(item.supplierName, s);
+    }
+  }
+  if (suppliers.size > 0) {
+    prompt += `【供应商分析】\n`;
+    prompt += `- 涉及供应商数: ${suppliers.size}\n`;
+    const sorted = [...suppliers.entries()].sort((a, b) => b[1].amount - a[1].amount);
+    for (const [name, data] of sorted) {
+      prompt += `- ${name}: ${data.count} 项, 金额 ${data.amount.toLocaleString()} 元\n`;
+    }
+    prompt += '\n';
+  }
 
   prompt += `【分类任务详情】\n`;
   for (const [category, categoryItems] of Object.entries(categoryMap)) {
@@ -224,7 +278,7 @@ function buildPrompt(
   prompt += `5. 客观分析风险和问题\n`;
   prompt += `6. 提出切实可行的下阶段计划\n\n`;
   prompt += `请用JSON格式返回，字段如下：\n`;
-  prompt += `{"summary":"执行摘要","periodProgress":"本周期进展总结","completedTasks":0,"inProgressTasks":0,"pendingTasks":0,"totalTasks":0,"completionRate":0,"categories":[{"name":"分类名","tasks":[{"title":"任务","status":"状态","subStatus":"子状态","progress":"进展","completedAt":"完成日期"}]}],"highlights":["亮点"],"risks":["风险"],"nextSteps":["计划"]}\n`;
+  prompt += `{"summary":"执行摘要","periodProgress":"本周期进展总结","completedTasks":0,"inProgressTasks":0,"pendingTasks":0,"totalTasks":0,"completionRate":0,"totalEstimatedAmount":0,"totalFinalAmount":0,"totalSavings":0,"savingsRate":0,"costAnalysis":"成本分析说明","categories":[{"name":"分类名","tasks":[{"title":"任务","status":"状态","subStatus":"子状态","progress":"进展","completedAt":"完成日期","estimatedAmount":0,"finalAmount":0,"supplierName":""}]}],"supplierStats":[{"name":"供应商名","itemCount":0,"totalAmount":0}],"highlights":["亮点"],"risks":["风险"],"nextSteps":["计划"]}\n`;
 
   return prompt;
 }

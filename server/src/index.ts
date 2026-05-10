@@ -14,6 +14,7 @@ import reportRoutes from './routes/reports';
 import subStatusRoutes from './routes/subStatus';
 import categoryRoutes from './routes/categories';
 import voiceRoutes from './routes/voice';
+import projectRoutes from './routes/projects';
 import { errorHandler } from './middleware/errorHandler';
 import { prisma } from './utils/prisma';
 
@@ -98,6 +99,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/sub-status', subStatusRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/voice', voiceRoutes);
+app.use('/api/projects', projectRoutes);
 
 // Health check — probes the database connection
 app.get('/api/health', async (_, res) => {

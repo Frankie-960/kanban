@@ -1,5 +1,5 @@
 #!/bin/bash
-# 采购工作看板 — 阿里云 ECS 一键部署脚本
+# 采购工作站 — 阿里云 ECS 一键部署脚本
 # 适用系统: Ubuntu 22.04 LTS
 # 运行方式: sudo bash setup.sh
 # -------------------------------------------------------
@@ -20,7 +20,7 @@ REPO_URL="https://github.com/Frankie-960/kanban.git"
 SERVICE_NAME="kanban"
 LOG_DIR="/var/log/kanban"
 
-section "采购工作看板 — 部署脚本 v1.0"
+section "采购工作站 — 部署脚本 v1.0"
 echo "  目标目录 : $APP_DIR"
 echo "  代码仓库 : $REPO_URL"
 echo ""

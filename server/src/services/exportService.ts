@@ -163,7 +163,7 @@ export async function exportToWord(report: ReportData, reportType: string): Prom
 
 export async function exportToExcel(report: ReportData, reportType: string): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = '采购工作看板';
+  workbook.creator = '采购工作站';
   workbook.created = new Date();
 
   // Summary Sheet

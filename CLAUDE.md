@@ -1,12 +1,24 @@
 # 采购工作看板 — Claude Code 上下文
 
 ## 项目概述
-内部采购部门工作看板 + 合同管理系统。Express.js + TypeScript 后端，SQLite 数据库（Prisma ORM），Vue.js 前端（已构建产物在 dist/）。
+内部采购部门工作看板 + 合同管理系统。Express.js + TypeScript 后端，SQLite 数据库（Prisma ORM），React 18 + Vite 前端（源码在 client/，构建产物在 dist/）。
 
 ## 目录结构
 ```
 contract-generator-deployment/
-├── dist/                     # 前端构建产物（生产部署用）
+├── client/                   # 前端源码（React 18 + Vite + Ant Design 5 + Zustand）
+│   ├── src/
+│   │   ├── App.tsx / main.tsx / index.css
+│   │   ├── components/       # Layout.tsx, UserAvatar.tsx
+│   │   ├── pages/            # Kanban, ItemList, ItemDetail, Dashboard, Admin,
+│   │   │                     # Department, Login, Register, Reminders, Reports,
+│   │   │                     # ReportDetail, Settings
+│   │   ├── services/api.ts   # axios 封装
+│   │   ├── stores/appStore.ts # Zustand 全局状态
+│   │   ├── types/index.ts
+│   │   └── utils/            # date, llm, number, priority, report, role, theme
+│   └── vite.config.ts        # 代理 /api → localhost:3001
+├── dist/                     # 前端构建产物（cd client && npm run build 输出到 ../dist）
 └── server/
     ├── prisma/
     │   ├── schema.prisma     # 数据模型（改完必须 db push）
@@ -97,5 +109,11 @@ npx prisma db seed          # 写入默认分类/子状态
 ## 已实现的功能
 - 忘记密码 / 邮件重置 / 管理员强制重置（mustChangePassword 流程）
 - 提醒定时触发（node-cron，每分钟，支持 DAILY/WEEKLY/MONTHLY 递推）
-- 金额汇总（`GET /api/items/summary`：合计/分类/状态/超预算明细）
+- 金额汇总（`GET /api/items/summary`：合计/分类/状态/超预算明细，**已用 SQL 聚合替代内存过滤**）
 - 公告已读追踪（`POST .../read`，`GET .../read-status`）
+- **项目管理**：`Project` 模型 + `routes/projects.ts`（CRUD + `/summary`），Item 加 `projectId`
+  - 项目级元数据：编号(unique)、负责人、状态、总预算、起止日期、可见范围
+  - 项目详情页含子任务表格 + 4 个统计卡（任务数/逾期/金额/预算使用率）
+  - 看板/列表筛选支持 `?projectId=xxx` 或 `?projectId=null` 查询无项目散任务
+- **category 动态校验**：白名单校验 `Category` 表 + 内置默认值（PROCUREMENT_SOURCING/PAYMENT/OTHER）
+- **错误日志**：所有 catch 已补 `console.error`，便于线上排查

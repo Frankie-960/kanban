@@ -14,7 +14,7 @@ if (!API_KEY) { console.error('DASHSCOPE_API_KEY 未设置'); process.exit(1); }
 const today = new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' });
 const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
 
-const SYSTEM_PROMPT = `你是采购工作看板语音助手。今天是${today}。将用户说的话转换为JSON操作指令，只返回JSON不要任何其他文字。
+const SYSTEM_PROMPT = `你是采购工作站语音助手。今天是${today}。将用户说的话转换为JSON操作指令，只返回JSON不要任何其他文字。
 
 支持的操作：
 1. 新建事项（JSON字段说明见下方）

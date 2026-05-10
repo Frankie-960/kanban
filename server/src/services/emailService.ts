@@ -28,7 +28,7 @@ export async function sendEmail(opts: EmailOptions): Promise<boolean> {
   }
   try {
     await transporter.sendMail({
-      from: `"采购工作看板" <${process.env.SMTP_USER}>`,
+      from: `"采购工作站" <${process.env.SMTP_USER}>`,
       to: opts.to,
       subject: opts.subject,
       text: opts.text,
@@ -43,7 +43,7 @@ export async function sendEmail(opts: EmailOptions): Promise<boolean> {
 
 export function buildPasswordResetEmail(name: string, resetUrl: string): EmailOptions {
   return {
-    subject: '采购工作看板 — 密码重置请求',
+    subject: '采购工作站 — 密码重置请求',
     text: `您好 ${name}，\n\n请点击以下链接重置您的密码（链接 1 小时内有效）：\n\n${resetUrl}\n\n如果您没有发起此请求，请忽略此邮件，您的密码不会被更改。`,
     html: `<p>您好 <strong>${name}</strong>，</p>
 <p>请点击以下按钮重置您的密码（链接 <strong>1 小时</strong>内有效）：</p>
@@ -65,14 +65,14 @@ export function buildReminderEmail(
 
   return {
     subject: `📌 任务提醒：${itemTitle}`,
-    text: `您好 ${userName}，\n\n您设置的任务提醒已到期：\n\n任务：${itemTitle}\n${dueDateStr}\n\n请登录采购工作看板查看详情。`,
+    text: `您好 ${userName}，\n\n您设置的任务提醒已到期：\n\n任务：${itemTitle}\n${dueDateStr}\n\n请登录采购工作站查看详情。`,
     html: `<p>您好 <strong>${userName}</strong>，</p>
 <p>您设置的任务提醒已到期：</p>
 <table style="border-collapse:collapse;margin:12px 0;">
   <tr><td style="padding:4px 12px 4px 0;color:#6b7280;">任务</td><td><strong>${itemTitle}</strong></td></tr>
   ${dueDate ? `<tr><td style="padding:4px 12px 4px 0;color:#6b7280;">截止日期</td><td>${dueDate.toLocaleDateString('zh-CN')}</td></tr>` : ''}
 </table>
-<p>请登录采购工作看板查看详情。</p>`,
+<p>请登录采购工作站查看详情。</p>`,
     to: '',
   };
 }

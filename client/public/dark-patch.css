@@ -1,0 +1,727 @@
+/* ── 暗色模式补丁 ── 修复 Ant Design 组件在 dark-mode 下的显示问题 ── */
+
+/* 暗色模式：看板卡片强制深色背景 */
+body.dark-mode .kanban-card {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border-color: #30363d !important;
+}
+body.dark-mode .kanban-card.priority-urgent,
+body.dark-mode .kanban-card.priority-high {
+  background: var(--bg-card) !important;
+}
+body.dark-mode .kanban-card.priority-urgent {
+  border-left-color: var(--color-danger) !important;
+  box-shadow: inset 3px 0 0 var(--color-danger), var(--shadow-card) !important;
+}
+body.dark-mode .kanban-card.priority-high {
+  border-left-color: var(--color-warning) !important;
+  box-shadow: inset 3px 0 0 var(--color-warning), var(--shadow-card) !important;
+}
+
+/* 输入框 / 文本域 */
+body.dark-mode .ant-input,
+body.dark-mode .ant-input-affix-wrapper,
+body.dark-mode .ant-input-number,
+body.dark-mode .ant-input-number-input,
+body.dark-mode textarea.ant-input {
+  background: var(--bg-hover) !important;
+  color: var(--text-primary) !important;
+  border-color: #30363d !important;
+}
+body.dark-mode .ant-input::placeholder,
+body.dark-mode .ant-input-affix-wrapper input::placeholder {
+  color: var(--text-secondary) !important;
+}
+body.dark-mode .ant-input:focus,
+body.dark-mode .ant-input-affix-wrapper-focused {
+  border-color: #58a6ff !important;
+  box-shadow: 0 0 0 2px rgba(88,166,255,.2) !important;
+}
+body.dark-mode .ant-input-affix-wrapper .ant-input-prefix,
+body.dark-mode .ant-input-affix-wrapper .ant-input-suffix {
+  color: var(--text-secondary) !important;
+}
+
+/* Select 选择器 */
+body.dark-mode .ant-select-selector {
+  background: var(--bg-hover) !important;
+  border-color: #30363d !important;
+  color: var(--text-primary) !important;
+}
+body.dark-mode .ant-select-arrow,
+body.dark-mode .ant-select-clear {
+  color: var(--text-secondary) !important;
+}
+body.dark-mode .ant-select-dropdown {
+  background: var(--bg-card) !important;
+  border: 1px solid #30363d !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5) !important;
+}
+body.dark-mode .ant-select-item {
+  color: var(--text-primary) !important;
+}
+body.dark-mode .ant-select-item-option-active,
+body.dark-mode .ant-select-item-option:hover {
+  background: var(--bg-hover) !important;
+}
+body.dark-mode .ant-select-item-option-selected {
+  background: rgba(88,166,255,.15) !important;
+  color: #58a6ff !important;
+}
+body.dark-mode .ant-select-selection-placeholder {
+  color: var(--text-secondary) !important;
+}
+
+/* 弹窗 Modal */
+body.dark-mode .ant-modal-content {
+  background: var(--bg-card) !important;
+  border: 1px solid #30363d !important;
+  box-shadow: 0 24px 80px rgba(0,0,0,.6) !important;
+}
+body.dark-mode .ant-modal-header {
+  background: var(--bg-card) !important;
+  border-bottom-color: #30363d !important;
+}
+body.dark-mode .ant-modal-title {
+  color: var(--text-primary) !important;
+}
+body.dark-mode .ant-modal-close {
+  color: var(--text-secondary) !important;
+}
+body.dark-mode .ant-modal-close:hover {
+  color: var(--text-primary) !important;
+  background: var(--bg-hover) !important;
+}
+body.dark-mode .ant-modal-footer {
+  border-top-color: #30363d !important;
+  background: var(--bg-card) !important;
+}
+
+/* 抽屉 Drawer */
+body.dark-mode .ant-drawer-content {
+  background: var(--bg-card) !important;
+}
+body.dark-mode .ant-drawer-header {
+  background: var(--bg-card) !important;
+  border-bottom-color: #30363d !important;
+}
+body.dark-mode .ant-drawer-title {
+  color: var(--text-primary) !important;
+}
+body.dark-mode .ant-drawer-close {
+  color: var(--text-secondary) !important;
+}
+
+/* 表格 Table */
+body.dark-mode .ant-table {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+}
+body.dark-mode .ant-table-container {
+  border-color: #30363d !important;
+}
+body.dark-mode .ant-table-thead > tr > th {
+  background: var(--bg-hover) !important;
+  color: var(--text-secondary) !important;
+  border-bottom-color: #30363d !important;
+}
+body.dark-mode .ant-table-tbody > tr > td {
+  border-bottom-color: #21262d !important;
+  color: var(--text-primary) !important;
+}
+body.dark-mode .ant-table-tbody > tr:hover > td {
+  background: var(--bg-hover) !important;
+}
+body.dark-mode .ant-table-tbody > tr.ant-table-row-selected > td {
+  background: rgba(88,166,255,.1) !important;
+}
+body.dark-mode .ant-table-placeholder {
+  background: var(--bg-card) !important;
+  color: var(--text-secondary) !important;
+}
+
+/* 标签 Tag */
+body.dark-mode .ant-tag {
+  background: var(--bg-hover) !important;
+  border-color: #30363d !important;
+  color: var(--text-primary) !important;
+}
+body.dark-mode .ant-tag-blue    { background: rgba(88,166,255,.15) !important; border-color: rgba(88,166,255,.3) !important; color: #58a6ff !important; }
+body.dark-mode .ant-tag-green   { background: rgba(52,199,89,.15)  !important; border-color: rgba(52,199,89,.3)  !important; color: #3fb950 !important; }
+body.dark-mode .ant-tag-orange  { background: rgba(255,159,10,.15) !important; border-color: rgba(255,159,10,.3) !important; color: #f0883e !important; }
+body.dark-mode .ant-tag-red     { background: rgba(255,69,58,.15)  !important; border-color: rgba(255,69,58,.3)  !important; color: #ff7b72 !important; }
+body.dark-mode .ant-tag-purple  { background: rgba(163,113,247,.15)!important; border-color: rgba(163,113,247,.3)!important; color: #d2a8ff !important; }
+body.dark-mode .ant-tag-cyan    { background: rgba(10,189,227,.15) !important; border-color: rgba(10,189,227,.3) !important; color: #39d3f2 !important; }
+
+/* 下拉菜单 Dropdown */
+body.dark-mode .ant-dropdown-menu {
+  background: var(--bg-card) !important;
+  border: 1px solid #30363d !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5) !important;
+}
+body.dark-mode .ant-dropdown-menu-item {
+  color: var(--text-primary) !important;
+}
+body.dark-mode .ant-dropdown-menu-item:hover {
+  background: var(--bg-hover) !important;
+}
+body.dark-mode .ant-dropdown-menu-item-divider {
+  background: #30363d !important;
+}
+
+/* 弹出框 Popover / Tooltip */
+body.dark-mode .ant-tooltip-inner {
+  background: #2d333b !important;
+  color: var(--text-primary) !important;
+  border: 1px solid #444c56 !important;
+}
+body.dark-mode .ant-tooltip-arrow-content {
+  background: #2d333b !important;
+}
+body.dark-mode .ant-popover-inner {
+  background: var(--bg-card) !important;
+  border: 1px solid #30363d !important;
+}
+body.dark-mode .ant-popover-title {
+  border-bottom-color: #30363d !important;
+  color: var(--text-primary) !important;
+}
+body.dark-mode .ant-popover-inner-content {
+  color: var(--text-primary) !important;
+}
+
+/* 标签页 Tabs */
+body.dark-mode .ant-tabs-nav {
+  border-bottom-color: #30363d !important;
+}
+body.dark-mode .ant-tabs-tab {
+  color: var(--text-secondary) !important;
+}
+body.dark-mode .ant-tabs-tab:hover,
+body.dark-mode .ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #58a6ff !important;
+}
+body.dark-mode .ant-tabs-ink-bar {
+  background: #58a6ff !important;
+}
+
+/* 表单 Form */
+body.dark-mode .ant-form-item-label > label {
+  color: var(--text-primary) !important;
+}
+body.dark-mode .ant-form-item-explain-error {
+  color: #ff7b72 !important;
+}
+
+/* 分页 Pagination */
+body.dark-mode .ant-pagination-item {
+  background: var(--bg-hover) !important;
+  border-color: #30363d !important;
+}
+body.dark-mode .ant-pagination-item a {
+  color: var(--text-primary) !important;
+}
+body.dark-mode .ant-pagination-item-active {
+  background: rgba(88,166,255,.15) !important;
+  border-color: #58a6ff !important;
+}
+body.dark-mode .ant-pagination-item-active a {
+  color: #58a6ff !important;
+}
+body.dark-mode .ant-pagination-prev button,
+body.dark-mode .ant-pagination-next button {
+  background: var(--bg-hover) !important;
+  border-color: #30363d !important;
+  color: var(--text-primary) !important;
+}
+
+/* 日期选择器 DatePicker */
+body.dark-mode .ant-picker {
+  background: var(--bg-hover) !important;
+  border-color: #30363d !important;
+}
+body.dark-mode .ant-picker input {
+  color: var(--text-primary) !important;
+}
+body.dark-mode .ant-picker-suffix,
+body.dark-mode .ant-picker-clear {
+  color: var(--text-secondary) !important;
+}
+body.dark-mode .ant-picker-dropdown {
+  background: var(--bg-card) !important;
+}
+body.dark-mode .ant-picker-panel-container {
+  background: var(--bg-card) !important;
+  border: 1px solid #30363d !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5) !important;
+}
+body.dark-mode .ant-picker-header {
+  border-bottom-color: #30363d !important;
+  color: var(--text-primary) !important;
+}
+body.dark-mode .ant-picker-header button {
+  color: var(--text-secondary) !important;
+}
+body.dark-mode .ant-picker-content th,
+body.dark-mode .ant-picker-cell-inner {
+  color: var(--text-primary) !important;
+}
+body.dark-mode .ant-picker-cell-disabled .ant-picker-cell-inner {
+  color: #444c56 !important;
+}
+body.dark-mode .ant-picker-cell-in-view.ant-picker-cell-today .ant-picker-cell-inner::before {
+  border-color: #58a6ff !important;
+}
+body.dark-mode .ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner {
+  background: #58a6ff !important;
+}
+
+/* 按钮 */
+body.dark-mode .ant-btn-default {
+  background: var(--bg-hover) !important;
+  border-color: #30363d !important;
+  color: var(--text-primary) !important;
+}
+body.dark-mode .ant-btn-default:hover {
+  border-color: #58a6ff !important;
+  color: #58a6ff !important;
+}
+body.dark-mode .ant-btn-dangerous {
+  color: #ff7b72 !important;
+  border-color: rgba(255,123,114,.4) !important;
+}
+body.dark-mode .ant-btn-dangerous:hover {
+  background: rgba(255,123,114,.1) !important;
+}
+
+/* 主布局 */
+body.dark-mode .ant-layout {
+  background: var(--bg-page) !important;
+}
+body.dark-mode .ant-layout-header {
+  background: var(--bg-card) !important;
+  border-bottom: 1px solid #30363d !important;
+}
+body.dark-mode .ant-layout-content {
+  background: var(--bg-page) !important;
+}
+body.dark-mode .ant-layout-footer {
+  background: var(--bg-card) !important;
+  color: var(--text-secondary) !important;
+}
+
+/* 分割线 */
+body.dark-mode .ant-divider {
+  border-color: #30363d !important;
+}
+
+/* 空状态 */
+body.dark-mode .ant-empty-description {
+  color: var(--text-secondary) !important;
+}
+
+/* 卡片标题、描述 */
+body.dark-mode .ant-card-head {
+  background: var(--bg-card) !important;
+  border-bottom-color: #30363d !important;
+  color: var(--text-primary) !important;
+}
+body.dark-mode .ant-card-body {
+  color: var(--text-primary) !important;
+}
+body.dark-mode .ant-card-meta-title {
+  color: var(--text-primary) !important;
+}
+body.dark-mode .ant-card-meta-description {
+  color: var(--text-secondary) !important;
+}
+
+/* 统计数字 Statistic */
+body.dark-mode .ant-statistic-title {
+  color: var(--text-secondary) !important;
+}
+body.dark-mode .ant-statistic-content {
+  color: var(--text-primary) !important;
+}
+
+/* 徽章 Badge */
+body.dark-mode .ant-badge-count {
+  box-shadow: 0 0 0 1px var(--bg-card) !important;
+}
+
+/* 消息提示 Message */
+body.dark-mode .ant-message-notice-content {
+  background: var(--bg-card) !important;
+  border: 1px solid #30363d !important;
+  color: var(--text-primary) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,.4) !important;
+}
+
+/* 进度条 */
+body.dark-mode .ant-progress-inner {
+  background: var(--bg-hover) !important;
+}
+
+/* 滚动条 */
+body.dark-mode ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+body.dark-mode ::-webkit-scrollbar-track {
+  background: var(--bg-page);
+}
+body.dark-mode ::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 3px;
+}
+body.dark-mode ::-webkit-scrollbar-thumb:hover {
+  background: #444c56;
+}
+
+/* 逾期任务高亮 */
+body.dark-mode .kanban-card[data-overdue="true"],
+body.dark-mode .item-overdue {
+  border-left-color: var(--color-danger) !important;
+  box-shadow: inset 3px 0 0 var(--color-danger), 0 0 0 1px rgba(255,69,58,.25), var(--shadow-card) !important;
+}
+.kanban-card[data-overdue="true"],
+.item-overdue {
+  border-left-color: var(--color-danger) !important;
+  background: linear-gradient(135deg, #fff0ee 0%, var(--bg-card) 40%) !important;
+}
+body.dark-mode .kanban-card[data-overdue="true"] {
+  background: var(--bg-card) !important;
+}
+
+/* 统计悬浮栏 */
+#kpi-bar {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--text-tertiary);
+  box-shadow: 0 1px 8px rgba(0,0,0,.06);
+  font-size: 13px;
+  flex-wrap: wrap;
+  transition: background .2s, border-color .2s;
+}
+body.dark-mode #kpi-bar {
+  border-bottom-color: #30363d;
+  box-shadow: 0 1px 8px rgba(0,0,0,.3);
+}
+.kpi-card {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  background: var(--bg-hover);
+  cursor: default;
+  white-space: nowrap;
+  transition: background .15s;
+}
+body.dark-mode .kpi-card {
+  background: var(--bg-hover);
+}
+.kpi-card:hover {
+  background: #e8f0fe;
+}
+body.dark-mode .kpi-card:hover {
+  background: #21262d;
+}
+.kpi-label {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.kpi-value {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text-primary);
+}
+.kpi-card.kpi-overdue .kpi-value { color: var(--color-danger); }
+.kpi-card.kpi-completed .kpi-value { color: var(--color-success); }
+.kpi-card.kpi-amount .kpi-value { color: var(--color-primary); }
+.kpi-card.kpi-save .kpi-value { color: var(--color-success); }
+.kpi-spacer { flex: 1; }
+.kpi-report-btn {
+  padding: 6px 16px;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+  white-space: nowrap;
+}
+.kpi-report-btn:hover { background: var(--color-primary-hover); }
+
+/* ── 亮色模式强制重置 ── 防止切换后 Ant Design 内部样式残留 ── */
+body:not(.dark-mode) .ant-tag {
+  background: #f0f0f0 !important;
+  border-color: #d9d9d9 !important;
+  color: rgba(0,0,0,.88) !important;
+}
+body:not(.dark-mode) .ant-tag-blue    { background: #e6f4ff !important; border-color: #91caff !important; color: #0958d9 !important; }
+body:not(.dark-mode) .ant-tag-green   { background: #f6ffed !important; border-color: #b7eb8f !important; color: #389e0d !important; }
+body:not(.dark-mode) .ant-tag-orange  { background: #fff7e6 !important; border-color: #ffd591 !important; color: #d46b08 !important; }
+body:not(.dark-mode) .ant-tag-red     { background: #fff1f0 !important; border-color: #ffa39e !important; color: #cf1322 !important; }
+body:not(.dark-mode) .ant-tag-purple  { background: #f9f0ff !important; border-color: #d3adf7 !important; color: #531dab !important; }
+body:not(.dark-mode) .ant-tag-cyan    { background: #e6fffb !important; border-color: #87e8de !important; color: #08979c !important; }
+
+body:not(.dark-mode) .ant-table {
+  background: #fff !important;
+  color: rgba(0,0,0,.88) !important;
+}
+body:not(.dark-mode) .ant-table-thead > tr > th {
+  background: #fafafa !important;
+  color: rgba(0,0,0,.88) !important;
+  border-color: #f0f0f0 !important;
+}
+body:not(.dark-mode) .ant-table-tbody > tr > td {
+  background: #fff !important;
+  color: rgba(0,0,0,.88) !important;
+  border-color: #f0f0f0 !important;
+}
+body:not(.dark-mode) .ant-table-tbody > tr:hover > td {
+  background: #fafafa !important;
+}
+
+body:not(.dark-mode) .ant-select-selector {
+  background: #fff !important;
+  border-color: #d9d9d9 !important;
+  color: rgba(0,0,0,.88) !important;
+}
+body:not(.dark-mode) .ant-select-dropdown {
+  background: #fff !important;
+  border: none !important;
+  box-shadow: 0 6px 16px rgba(0,0,0,.08) !important;
+}
+body:not(.dark-mode) .ant-select-item {
+  color: rgba(0,0,0,.88) !important;
+}
+body:not(.dark-mode) .ant-select-item-option-active,
+body:not(.dark-mode) .ant-select-item-option:hover {
+  background: #f5f5f5 !important;
+}
+
+body:not(.dark-mode) .ant-input,
+body:not(.dark-mode) .ant-input-affix-wrapper,
+body:not(.dark-mode) .ant-input-number {
+  background: #fff !important;
+  border-color: #d9d9d9 !important;
+  color: rgba(0,0,0,.88) !important;
+}
+
+body:not(.dark-mode) .ant-modal-content {
+  background: #fff !important;
+  border: none !important;
+}
+body:not(.dark-mode) .ant-modal-header {
+  background: #fff !important;
+  border-bottom-color: #f0f0f0 !important;
+}
+body:not(.dark-mode) .ant-modal-title {
+  color: rgba(0,0,0,.88) !important;
+}
+body:not(.dark-mode) .ant-modal-footer {
+  background: #fff !important;
+  border-top-color: #f0f0f0 !important;
+}
+
+body:not(.dark-mode) .ant-card {
+  background: #fff !important;
+}
+body:not(.dark-mode) .ant-card-head {
+  background: #fff !important;
+  border-bottom-color: #f0f0f0 !important;
+  color: rgba(0,0,0,.88) !important;
+}
+body:not(.dark-mode) .ant-card-body {
+  color: rgba(0,0,0,.88) !important;
+}
+
+body:not(.dark-mode) .ant-layout {
+  background: #f5f5f7 !important;
+}
+body:not(.dark-mode) .ant-layout-header {
+  background: #fff !important;
+  border-bottom: 1px solid #f0f0f0 !important;
+}
+body:not(.dark-mode) .ant-layout-sider {
+  background: #fff !important;
+}
+body:not(.dark-mode) .ant-menu {
+  background: transparent !important;
+  color: rgba(0,0,0,.88) !important;
+}
+body:not(.dark-mode) .ant-menu-item {
+  color: rgba(0,0,0,.88) !important;
+}
+
+body:not(.dark-mode) .ant-dropdown-menu {
+  background: #fff !important;
+  box-shadow: 0 6px 16px rgba(0,0,0,.08) !important;
+}
+body:not(.dark-mode) .ant-dropdown-menu-item {
+  color: rgba(0,0,0,.88) !important;
+}
+body:not(.dark-mode) .ant-dropdown-menu-item:hover {
+  background: #f5f5f5 !important;
+}
+
+body:not(.dark-mode) .ant-picker {
+  background: #fff !important;
+  border-color: #d9d9d9 !important;
+}
+body:not(.dark-mode) .ant-picker input {
+  color: rgba(0,0,0,.88) !important;
+}
+body:not(.dark-mode) .ant-picker-panel-container {
+  background: #fff !important;
+  border: none !important;
+  box-shadow: 0 6px 16px rgba(0,0,0,.08) !important;
+}
+
+body:not(.dark-mode) .ant-btn-default {
+  background: #fff !important;
+  border-color: #d9d9d9 !important;
+  color: rgba(0,0,0,.88) !important;
+}
+
+body:not(.dark-mode) .ant-tabs-tab {
+  color: rgba(0,0,0,.88) !important;
+}
+body:not(.dark-mode) .ant-tabs-nav {
+  border-bottom-color: #f0f0f0 !important;
+}
+
+body:not(.dark-mode) .ant-message-notice-content {
+  background: #fff !important;
+  border: none !important;
+  color: rgba(0,0,0,.88) !important;
+  box-shadow: 0 6px 16px rgba(0,0,0,.08) !important;
+}
+
+body:not(.dark-mode) .kanban-card.priority-urgent {
+  background: linear-gradient(135deg,#fff5f5 0%,#fff 50%) !important;
+}
+body:not(.dark-mode) .kanban-card.priority-high {
+  background: linear-gradient(135deg,#fff7e6 0%,#fff 50%) !important;
+}
+
+/* 亮色模式：统计数字 Statistic */
+body:not(.dark-mode) .ant-statistic-title {
+  color: rgba(0,0,0,.45) !important;
+}
+body:not(.dark-mode) .ant-statistic-content,
+body:not(.dark-mode) .ant-statistic-content-value,
+body:not(.dark-mode) .ant-statistic-content-suffix,
+body:not(.dark-mode) .ant-statistic-content-prefix {
+  color: rgba(0,0,0,.88) !important;
+}
+
+/* 亮色模式：列表 List */
+body:not(.dark-mode) .ant-list-item {
+  color: rgba(0,0,0,.88) !important;
+  border-color: #f0f0f0 !important;
+}
+body:not(.dark-mode) .ant-list-item-meta-title {
+  color: rgba(0,0,0,.88) !important;
+}
+body:not(.dark-mode) .ant-list-item-meta-description {
+  color: rgba(0,0,0,.45) !important;
+}
+
+/* 亮色模式：描述列表 Descriptions */
+body:not(.dark-mode) .ant-descriptions-title {
+  color: rgba(0,0,0,.88) !important;
+}
+body:not(.dark-mode) .ant-descriptions-item-label {
+  color: rgba(0,0,0,.45) !important;
+  background: #fafafa !important;
+}
+body:not(.dark-mode) .ant-descriptions-item-content {
+  color: rgba(0,0,0,.88) !important;
+  background: #fff !important;
+}
+body:not(.dark-mode) .ant-descriptions-view {
+  border-color: #f0f0f0 !important;
+}
+
+/* 亮色模式：抽屉 Drawer */
+body:not(.dark-mode) .ant-drawer-content {
+  background: #fff !important;
+}
+body:not(.dark-mode) .ant-drawer-header {
+  background: #fff !important;
+  border-bottom-color: #f0f0f0 !important;
+}
+body:not(.dark-mode) .ant-drawer-title {
+  color: rgba(0,0,0,.88) !important;
+}
+
+/* 亮色模式：排版 Typography */
+body:not(.dark-mode) .ant-typography {
+  color: rgba(0,0,0,.88) !important;
+}
+body:not(.dark-mode) h1.ant-typography,
+body:not(.dark-mode) h2.ant-typography,
+body:not(.dark-mode) h3.ant-typography,
+body:not(.dark-mode) h4.ant-typography,
+body:not(.dark-mode) h5.ant-typography {
+  color: rgba(0,0,0,.88) !important;
+}
+body:not(.dark-mode) .ant-typography.ant-typography-secondary {
+  color: rgba(0,0,0,.45) !important;
+}
+
+/* 亮色模式：表单标签 Form */
+body:not(.dark-mode) .ant-form-item-label > label {
+  color: rgba(0,0,0,.88) !important;
+}
+body:not(.dark-mode) .ant-form-item-explain-error {
+  color: #ff4d4f !important;
+}
+
+/* 亮色模式：进度条 Progress */
+body:not(.dark-mode) .ant-progress-inner {
+  background: #f5f5f5 !important;
+}
+
+/* 亮色模式：空状态 */
+body:not(.dark-mode) .ant-empty-description {
+  color: rgba(0,0,0,.45) !important;
+}
+
+/* 亮色模式：Tooltip / Popover */
+body:not(.dark-mode) .ant-tooltip-inner {
+  background: rgba(0,0,0,.75) !important;
+  color: #fff !important;
+}
+body:not(.dark-mode) .ant-popover-inner {
+  background: #fff !important;
+}
+body:not(.dark-mode) .ant-popover-title {
+  color: rgba(0,0,0,.88) !important;
+  border-bottom-color: #f0f0f0 !important;
+}
+body:not(.dark-mode) .ant-popover-inner-content {
+  color: rgba(0,0,0,.88) !important;
+}
+
+/* 亮色模式：通知/徽章 */
+body:not(.dark-mode) .ant-badge-count {
+  box-shadow: 0 0 0 1px #fff !important;
+}
+
+/* 亮色模式：body 基础文字色（防止 dark-mode 文字色溢出到亮色视图） */
+body:not(.dark-mode) {
+  color: rgba(0,0,0,.88);
+}

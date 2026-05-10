@@ -9,7 +9,7 @@ const TASK_POLL_BASE  = 'https://dashscope.aliyuncs.com/api/v1/tasks';
 
 const buildSystemPrompt = (today: string) => {
   const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
-  return `你是采购工作看板语音助手。今天是${today}。将用户说的话转换为JSON操作指令，只返回JSON不要任何其他文字。
+  return `你是采购工作站语音助手。今天是${today}。将用户说的话转换为JSON操作指令，只返回JSON不要任何其他文字。
 
 支持的操作：
 1. 新建事项（JSON字段说明见下方）

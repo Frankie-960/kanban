@@ -8,21 +8,23 @@ router.use(authMiddleware);
 
 const createItemSchema = z.object({
   title: z.string().min(1),
-  description: z.string().optional(),
-  progress: z.string().optional(),
+  description: z.string().nullable().optional(),
+  progress: z.string().nullable().optional(),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
-  category: z.enum(['PROCUREMENT_SOURCING', 'PAYMENT', 'OTHER']).optional(),
+  // category is now dynamic — validated at runtime against Category table
+  category: z.string().optional(),
   status: z.enum(['TODO', 'IN_PROGRESS', 'COMPLETED']).optional(),
-  subStatus: z.string().optional(),
-  dueDate: z.string().datetime().optional(),
+  subStatus: z.string().nullable().optional(),
+  dueDate: z.string().datetime().nullable().optional(),
   visibility: z.enum(['PRIVATE', 'DEPARTMENT', 'SHARED']).optional(),
-  departmentId: z.string().optional(),
-  estimatedAmount: z.number().optional(),
-  finalAmount: z.number().optional(),
-  currency: z.string().optional(),
-  supplierName: z.string().optional(),
-  supplierAmount: z.number().optional(),
-  requesterDepartment: z.string().optional(),
+  departmentId: z.string().nullable().optional(),
+  estimatedAmount: z.number().nullable().optional(),
+  finalAmount: z.number().nullable().optional(),
+  currency: z.string().nullable().optional(),
+  supplierName: z.string().nullable().optional(),
+  supplierAmount: z.number().nullable().optional(),
+  requesterDepartment: z.string().nullable().optional(),
+  projectId: z.string().nullable().optional(),
 });
 
 const updateItemSchema = createItemSchema.partial();
@@ -32,16 +34,23 @@ const updateStatusSchema = z.object({
   subStatus: z.string().optional(),
 });
 
+// Built-in default categories — always accepted even if user hasn't run categories migration
+const BUILT_IN_CATEGORIES = new Set(['PROCUREMENT_SOURCING', 'PAYMENT', 'OTHER']);
+
+async function isCategoryValid(userId: string, key: string): Promise<boolean> {
+  if (BUILT_IN_CATEGORIES.has(key)) return true;
+  const found = await prisma.category.findFirst({ where: { userId, key, isActive: true } });
+  return !!found;
+}
+
 // S3 fix: build a correct visibility+search where clause without flattening OR conditions
 function buildItemWhere(
   userId: string,
   userDeptId: string | null,
-  query: { status?: unknown; priority?: unknown; category?: unknown; search?: unknown; view?: unknown }
+  query: { status?: unknown; priority?: unknown; category?: unknown; search?: unknown; view?: unknown; projectId?: unknown }
 ) {
-  const { status, priority, category, search, view } = query;
+  const { status, priority, category, search, projectId } = query;
 
-  // Always include department tasks when user belongs to a department,
-  // regardless of which view the frontend is currently showing.
   const visibilityFilter = userDeptId
     ? {
         OR: [
@@ -54,11 +63,14 @@ function buildItemWhere(
       }
     : { userId };
 
-  // All conditions are ANDed together so that search never bypasses visibility
   const andClauses: object[] = [visibilityFilter];
   if (status) andClauses.push({ status });
   if (priority) andClauses.push({ priority });
   if (category) andClauses.push({ category });
+  if (projectId !== undefined) {
+    // 'null' string → filter for items NOT in any project (inbox / 散任务)
+    andClauses.push(projectId === 'null' ? { projectId: null } : { projectId: projectId as string });
+  }
   if (search) {
     andClauses.push({
       OR: [
@@ -90,6 +102,7 @@ router.get('/', async (req: AuthRequest, res) => {
           include: {
             experiences: true,
             user: { select: { id: true, name: true } },
+            project: { select: { id: true, name: true, code: true } },
             _count: { select: { experiences: true } },
           },
         }),
@@ -104,17 +117,20 @@ router.get('/', async (req: AuthRequest, res) => {
       include: {
         experiences: true,
         user: { select: { id: true, name: true } },
+        project: { select: { id: true, name: true, code: true } },
         _count: { select: { experiences: true } },
       },
     });
 
     res.json(items);
-  } catch {
+  } catch (e) {
+    console.error('GET /items failed:', e);
     res.status(500).json({ error: 'Failed to fetch items' });
   }
 });
 
 // Financial summary — must be before /:id to avoid route shadowing
+// Optimized: use SQL aggregation instead of loading all items into memory
 router.get('/summary', async (req: AuthRequest, res) => {
   try {
     const currentUser = req.user!;
@@ -122,13 +138,22 @@ router.get('/summary', async (req: AuthRequest, res) => {
 
     const now = new Date();
 
-    // Natural month boundaries
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
     const monthEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-    const monthWhere = { ...where, createdAt: { gte: monthStart, lte: monthEnd } };
+    const monthWhere = { AND: [...(where.AND as object[]), { createdAt: { gte: monthStart, lte: monthEnd } }] };
     const monthLabel = `${now.getFullYear()}年${now.getMonth() + 1}月`;
 
-    const [totals, byCategory, byStatus, allItems, monthlyItems] = await Promise.all([
+    const [
+      totals,
+      byCategory,
+      byStatus,
+      overdueCount,
+      overBudgetItems,
+      monthlyTotals,
+      monthlyByStatus,
+      monthlyOverdueCount,
+      monthlySavedRows,
+    ] = await Promise.all([
       prisma.item.aggregate({
         where,
         _count: { id: true },
@@ -145,40 +170,53 @@ router.get('/summary', async (req: AuthRequest, res) => {
         where,
         _count: { id: true },
       }),
-      prisma.item.findMany({
-        where,
-        select: { id: true, title: true, estimatedAmount: true, finalAmount: true, status: true, currency: true, dueDate: true },
+      prisma.item.count({
+        where: { AND: [...(where.AND as object[]), { status: { not: 'COMPLETED' }, dueDate: { lt: now, not: null } }] },
       }),
       prisma.item.findMany({
+        where: { AND: [...(where.AND as object[]), { estimatedAmount: { not: null }, finalAmount: { not: null } }] },
+        select: { id: true, title: true, estimatedAmount: true, finalAmount: true, status: true, currency: true, dueDate: true },
+      }),
+      prisma.item.aggregate({
         where: monthWhere,
-        select: { id: true, estimatedAmount: true, finalAmount: true, status: true, dueDate: true },
+        _count: { id: true },
+        _sum: { estimatedAmount: true, finalAmount: true },
+      }),
+      prisma.item.groupBy({
+        by: ['status'],
+        where: monthWhere,
+        _count: { id: true },
+      }),
+      prisma.item.count({
+        where: { AND: [...(monthWhere.AND as object[]), { status: { not: 'COMPLETED' }, dueDate: { lt: now, not: null } }] },
+      }),
+      prisma.item.findMany({
+        where: {
+          AND: [
+            ...(monthWhere.AND as object[]),
+            { status: 'COMPLETED' },
+            { estimatedAmount: { not: null }, finalAmount: { not: null } },
+          ],
+        },
+        select: { estimatedAmount: true, finalAmount: true },
       }),
     ]);
 
-    const overBudgetItems = allItems.filter(
+    const overBudgetFiltered = overBudgetItems.filter(
       (i) => i.finalAmount !== null && i.estimatedAmount !== null && i.finalAmount > i.estimatedAmount
     );
-
-    const overdueCount = allItems.filter(
-      (i) => i.status !== 'COMPLETED' && i.dueDate && new Date(i.dueDate) < now
-    ).length;
 
     const totalEst = totals._sum.estimatedAmount ?? 0;
     const totalFinal = totals._sum.finalAmount ?? 0;
 
-    // Monthly aggregation
-    const monthlyCompletedItems = monthlyItems.filter((i) => i.status === 'COMPLETED');
-    const monthlySavedAmount = monthlyCompletedItems.reduce((sum, i) => {
-      if (i.estimatedAmount !== null && i.finalAmount !== null && i.estimatedAmount > i.finalAmount) {
-        return sum + (i.estimatedAmount - i.finalAmount);
-      }
+    const monthlyEst = monthlyTotals._sum.estimatedAmount ?? 0;
+    const monthlyFinal = monthlyTotals._sum.finalAmount ?? 0;
+    const monthlyCompletedCount = monthlyByStatus.find((s) => s.status === 'COMPLETED')?._count.id ?? 0;
+    const monthlyInProgressCount = monthlyByStatus.find((s) => s.status === 'IN_PROGRESS')?._count.id ?? 0;
+    const monthlySavedAmount = monthlySavedRows.reduce((sum, i) => {
+      if (i.estimatedAmount! > i.finalAmount!) return sum + (i.estimatedAmount! - i.finalAmount!);
       return sum;
     }, 0);
-    const monthlyEst   = monthlyItems.reduce((s, i) => s + (i.estimatedAmount ?? 0), 0);
-    const monthlyFinal = monthlyItems.reduce((s, i) => s + (i.finalAmount ?? 0), 0);
-    const monthlyOverdueCount = monthlyItems.filter(
-      (i) => i.status !== 'COMPLETED' && i.dueDate && new Date(i.dueDate) < now
-    ).length;
 
     res.json({
       totals: {
@@ -192,11 +230,11 @@ router.get('/summary', async (req: AuthRequest, res) => {
       },
       byCategory,
       byStatus,
-      overBudgetItems,
+      overBudgetItems: overBudgetFiltered,
       monthly: {
-        count: monthlyItems.length,
-        completedCount: monthlyCompletedItems.length,
-        inProgressCount: monthlyItems.filter((i) => i.status === 'IN_PROGRESS').length,
+        count: monthlyTotals._count.id,
+        completedCount: monthlyCompletedCount,
+        inProgressCount: monthlyInProgressCount,
         overdueCount: monthlyOverdueCount,
         estimatedAmount: monthlyEst,
         finalAmount: monthlyFinal,
@@ -208,7 +246,8 @@ router.get('/summary', async (req: AuthRequest, res) => {
         },
       },
     });
-  } catch {
+  } catch (e) {
+    console.error('GET /items/summary failed:', e);
     res.status(500).json({ error: 'Failed to fetch summary' });
   }
 });
@@ -237,12 +276,14 @@ router.get('/:id', async (req: AuthRequest, res) => {
           include: { operator: { select: { id: true, name: true } } },
           orderBy: { createdAt: 'desc' },
         },
+        project: { select: { id: true, name: true, code: true } },
       },
     });
 
     if (!item) return res.status(404).json({ error: 'Item not found' });
     res.json(item);
-  } catch {
+  } catch (e) {
+    console.error('GET /items/:id failed:', e);
     res.status(500).json({ error: 'Failed to fetch item' });
   }
 });
@@ -251,6 +292,26 @@ router.get('/:id', async (req: AuthRequest, res) => {
 router.post('/', async (req: AuthRequest, res) => {
   try {
     const data = createItemSchema.parse(req.body);
+
+    if (data.category && !(await isCategoryValid(req.userId!, data.category))) {
+      return res.status(400).json({ error: `分类 "${data.category}" 不存在或未启用` });
+    }
+
+    // Verify project access if projectId provided
+    if (data.projectId) {
+      const project = await prisma.project.findFirst({
+        where: {
+          id: data.projectId,
+          OR: [
+            { ownerId: req.userId },
+            { visibility: 'DEPARTMENT', departmentId: req.user!.departmentId || undefined },
+            { visibility: 'SHARED' },
+          ],
+        },
+      });
+      if (!project) return res.status(404).json({ error: '项目不存在或无权限' });
+    }
+
     const maxOrder = await prisma.item.aggregate({
       where: { userId: req.userId },
       _max: { order: true },
@@ -276,11 +337,13 @@ router.post('/', async (req: AuthRequest, res) => {
         supplierName: data.supplierName,
         supplierAmount: data.supplierAmount,
         requesterDepartment: data.requesterDepartment,
+        projectId: data.projectId || null,
       },
     });
     res.json(item);
   } catch (err) {
     if (err instanceof z.ZodError) return res.status(400).json({ error: err.errors });
+    console.error('POST /items failed:', err);
     res.status(500).json({ error: 'Failed to create item' });
   }
 });
@@ -293,6 +356,24 @@ router.put('/:id', async (req: AuthRequest, res) => {
       where: { id: req.params.id, userId: req.userId },
     });
     if (!existing) return res.status(404).json({ error: 'Item not found' });
+
+    if (data.category && !(await isCategoryValid(req.userId!, data.category))) {
+      return res.status(400).json({ error: `分类 "${data.category}" 不存在或未启用` });
+    }
+
+    if (data.projectId) {
+      const project = await prisma.project.findFirst({
+        where: {
+          id: data.projectId,
+          OR: [
+            { ownerId: req.userId },
+            { visibility: 'DEPARTMENT', departmentId: req.user!.departmentId || undefined },
+            { visibility: 'SHARED' },
+          ],
+        },
+      });
+      if (!project) return res.status(404).json({ error: '项目不存在或无权限' });
+    }
 
     const updateData: Record<string, unknown> = {};
     if (data.title !== undefined) updateData.title = data.title;
@@ -311,11 +392,13 @@ router.put('/:id', async (req: AuthRequest, res) => {
     if (data.supplierName !== undefined) updateData.supplierName = data.supplierName || null;
     if (data.supplierAmount !== undefined) updateData.supplierAmount = data.supplierAmount;
     if (data.requesterDepartment !== undefined) updateData.requesterDepartment = data.requesterDepartment || null;
+    if (data.projectId !== undefined) updateData.projectId = data.projectId || null;
 
     const item = await prisma.item.update({ where: { id: req.params.id }, data: updateData });
     res.json(item);
   } catch (err) {
     if (err instanceof z.ZodError) return res.status(400).json({ error: err.errors });
+    console.error('PUT /items/:id failed:', err);
     res.status(500).json({ error: 'Failed to update item' });
   }
 });
@@ -330,7 +413,8 @@ router.delete('/:id', async (req: AuthRequest, res) => {
 
     await prisma.item.delete({ where: { id: req.params.id } });
     res.json({ success: true });
-  } catch {
+  } catch (e) {
+    console.error('DELETE /items/:id failed:', e);
     res.status(500).json({ error: 'Failed to delete item' });
   }
 });
@@ -366,7 +450,6 @@ router.patch('/:id/status', async (req: AuthRequest, res) => {
       }),
     ]);
 
-    // Auto-confirm linked announcement when task is completed (secondary effect, outside transaction)
     if (existing.announcementId && data.status === 'COMPLETED') {
       try {
         const announcement = await prisma.announcement.findUnique({
@@ -394,6 +477,7 @@ router.patch('/:id/status', async (req: AuthRequest, res) => {
     res.json(item);
   } catch (err) {
     if (err instanceof z.ZodError) return res.status(400).json({ error: err.errors });
+    console.error('PATCH /items/:id/status failed:', err);
     res.status(500).json({ error: 'Failed to update status' });
   }
 });
@@ -422,7 +506,8 @@ router.get('/:id/history', async (req: AuthRequest, res) => {
       orderBy: { createdAt: 'desc' },
     });
     res.json(histories);
-  } catch {
+  } catch (e) {
+    console.error('GET /items/:id/history failed:', e);
     res.status(500).json({ error: 'Failed to fetch history' });
   }
 });
@@ -436,13 +521,14 @@ router.patch('/reorder', async (req: AuthRequest, res) => {
     await prisma.$transaction(
       items.map((item) =>
         prisma.item.updateMany({
-          where: { id: item.id, userId: req.userId! }, // ownership enforced
+          where: { id: item.id, userId: req.userId! },
           data: { order: item.order },
         })
       )
     );
     res.json({ success: true });
-  } catch {
+  } catch (e) {
+    console.error('PATCH /items/reorder failed:', e);
     res.status(500).json({ error: 'Failed to reorder items' });
   }
 });
@@ -464,7 +550,8 @@ router.post('/:id/transfer', async (req: AuthRequest, res) => {
       data: { userId: targetUserId },
     });
     res.json(item);
-  } catch {
+  } catch (e) {
+    console.error('POST /items/:id/transfer failed:', e);
     res.status(500).json({ error: 'Failed to transfer item' });
   }
 });

@@ -26,6 +26,7 @@ model User {
   statusHistories     StatusHistory[]
   announcements       Announcement[]
   passwordResetTokens PasswordResetToken[]
+  projects            Project[]
 }
 
 model Department {
@@ -69,6 +70,9 @@ model Item {
   announcementId String?
   announcement   Announcement? @relation(fields: [announcementId], references: [id], onDelete: SetNull)
 
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
   reminders       Reminder[]
   experiences     Experience[]
   statusHistories StatusHistory[]
@@ -76,6 +80,34 @@ model Item {
   @@index([userId])
   @@index([departmentId, visibility])
   @@index([announcementId])
+  @@index([projectId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+model Project {
+  id           String    @id @default(cuid())
+  code         String?   @unique
+  name         String
+  description  String?
+  status       String    @default("PLANNING") // PLANNING / ACTIVE / ON_HOLD / COMPLETED / CANCELLED
+  ownerId      String
+  owner        User      @relation(fields: [ownerId], references: [id])
+  departmentId String?
+  totalBudget  Float?
+  currency     String?
+  startDate    DateTime?
+  dueDate      DateTime?
+  completedAt  DateTime?
+  visibility   String    @default("DEPARTMENT") // PRIVATE / DEPARTMENT / SHARED
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  items Item[]
+
+  @@index([ownerId])
+  @@index([departmentId, visibility])
+  @@index([status])
 }
 
 model StatusHistory {

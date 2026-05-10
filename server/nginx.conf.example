@@ -1,4 +1,4 @@
-# 采购工作看板 — Nginx 生产配置
+# 采购工作站 — Nginx 生产配置
 # 文件路径: /etc/nginx/sites-available/kanban
 #
 # 使用方式:
