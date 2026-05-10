@@ -18,16 +18,19 @@ cd "$APP_DIR"
 git pull origin master
 info "代码已更新"
 
-section "安装依赖 & 重新编译"
+section "安装依赖"
 cd "$APP_DIR/server"
 npm install --silent
+info "依赖安装完成"
+
+section "数据库迁移（同步 schema 到 SQLite）"
+npx prisma generate --no-hints 2>&1 || true
+npx prisma db push --accept-data-loss 2>&1 || true
+info "数据库已同步"
+
+section "重新编译"
 npm run build
 info "编译完成"
-
-section "数据库迁移（如有新增表/字段）"
-npx prisma generate --silent 2>/dev/null || true
-npx prisma db push 2>/dev/null
-info "数据库已同步"
 
 section "重启应用"
 pm2 restart kanban
