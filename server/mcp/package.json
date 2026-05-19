@@ -1,0 +1,29 @@
+{
+  "name": "kanban-mcp",
+  "version": "0.1.0",
+  "description": "MCP server exposing 采购看板 to Claude Code / Claude Desktop / OpenCode",
+  "type": "module",
+  "bin": {
+    "kanban-mcp": "./dist/index.js"
+  },
+  "files": [
+    "dist/",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "pack:release": "npm run build && npm pack",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "axios": "^1.7.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "tsx": "^4.19.0",
+    "typescript": "^5.4.5"
+  }
+}

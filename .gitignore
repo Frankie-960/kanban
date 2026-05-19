@@ -9,6 +9,8 @@ server/.env
 
 # TypeScript build output
 server/dist/
+server/mcp/dist/
+server/mcp/*.tgz
 
 # SQLite database — contains real user data
 server/prisma/dev.db

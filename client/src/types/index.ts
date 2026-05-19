@@ -273,10 +273,19 @@ export const CATEGORY_LABELS: Record<Category, string> = {
 };
 
 export const PRIORITY_LABELS: Record<Priority, string> = {
-  LOW: '低',
-  MEDIUM: '中',
-  HIGH: '高',
-  URGENT: '紧急',
+  URGENT: '重要紧急',
+  HIGH:   '重要不急',
+  MEDIUM: '紧急不重要',
+  LOW:    '不重要不急',
+};
+
+export type Quadrant = 'IU' | 'I' | 'U' | 'N';
+
+export const PRIORITY_QUADRANT: Record<Priority, { quadrant: Quadrant; label: string; axis: string }> = {
+  URGENT: { quadrant: 'IU', label: '重要紧急',   axis: '重要 · 紧急' },
+  HIGH:   { quadrant: 'I',  label: '重要不急',   axis: '重要 · 不急' },
+  MEDIUM: { quadrant: 'U',  label: '紧急不重要', axis: '紧急 · 不重要' },
+  LOW:    { quadrant: 'N',  label: '不重要不急', axis: '不重要 · 不急' },
 };
 
 export const STATUS_LABELS: Record<ItemStatus, string> = {

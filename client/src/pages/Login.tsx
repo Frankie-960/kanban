@@ -28,7 +28,7 @@ export default function Login() {
   const cardBg = isDark ? '#161b22' : '#ffffff';
   const textPrimary = isDark ? '#e6edf3' : '#1d1d1f';
   const textSecondary = isDark ? '#8b949e' : '#86868b';
-  const accentColor = isDark ? '#58a6ff' : '#0071e3';
+  const accentColor = isDark ? '#5A9170' : '#1F3D2E';
   const borderColor = isDark ? '#30363d' : '#d2d2d7';
 
   return (
@@ -194,7 +194,7 @@ function RegisterForm({ navigate, darkMode }: { navigate: any; darkMode: boolean
 
   const isDark = darkMode;
   const textSecondary = isDark ? '#8b949e' : '#86868b';
-  const accentColor = isDark ? '#58a6ff' : '#0071e3';
+  const accentColor = isDark ? '#5A9170' : '#1F3D2E';
 
   const inputStyle = {
     borderRadius: 10,

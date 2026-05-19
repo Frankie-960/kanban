@@ -17,6 +17,7 @@ import {
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAppStore } from '../stores/appStore';
+import { CommandPalette } from './CommandPalette';
 
 const { Header, Sider, Content } = AntLayout;
 
@@ -25,6 +26,7 @@ export default function Layout() {
   const location = useLocation();
   const { user, logout, currentView, setCurrentView } = useAppStore();
   const [collapsed, setCollapsed] = useState(false);
+  const [cmdkOpen, setCmdkOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode');
     return saved === 'true';
@@ -35,12 +37,25 @@ export default function Layout() {
     document.body.classList.toggle('dark-mode', darkMode);
   }, [darkMode]);
 
+  useEffect(() => {
+    const fn = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setCmdkOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', fn);
+    return () => window.removeEventListener('keydown', fn);
+  }, []);
+
+  const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
+
   const isDark = darkMode;
   const bgColor = isDark ? '#0d1117' : '#f5f5f7';
   const headerBg = isDark ? '#161b22' : '#ffffff';
   const siderBg = isDark ? '#161b22' : '#ffffff';
   const textPrimary = isDark ? '#e6edf3' : '#1d1d1f';
-  const accentColor = isDark ? '#58a6ff' : '#0071e3';
+  const accentColor = isDark ? '#5A9170' : '#1F3D2E';
   const borderColor = isDark ? '#30363d' : '#d2d2d7';
 
   const menuItems = [
@@ -160,7 +175,7 @@ export default function Layout() {
               style={{
                 background: currentView === 'personal'
                   ? (isDark ? '#238636' : '#34c759')
-                  : (isDark ? '#1f6feb' : '#0071e3'),
+                  : (isDark ? '#5A9170' : '#1F3D2E'),
                 color: '#fff',
                 border: 'none',
                 borderRadius: 20,
@@ -173,7 +188,16 @@ export default function Layout() {
               {currentView === 'personal' ? '个人视图' : '部门视图'}
             </button>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <button
+              className="cmdk-hint-btn"
+              onClick={() => setCmdkOpen(true)}
+              title="全局搜索 / 快捷动作"
+            >
+              <span>搜索</span>
+              <kbd>{isMac ? '⌘' : 'Ctrl'}</kbd>
+              <kbd>K</kbd>
+            </button>
             <Switch
               checked={darkMode}
               onChange={setDarkMode}
@@ -204,6 +228,7 @@ export default function Layout() {
           <Outlet />
         </Content>
       </AntLayout>
+      <CommandPalette open={cmdkOpen} onClose={() => setCmdkOpen(false)} />
     </AntLayout>
   );
 }

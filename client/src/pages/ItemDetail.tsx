@@ -187,7 +187,7 @@ export default function ItemDetail() {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <Form.Item name="status" label="主状态"><Select disabled options={[{ value: 'TODO', label: '待办' }, { value: 'IN_PROGRESS', label: '进行中' }, { value: 'COMPLETED', label: '已完成' }]} style={{ borderRadius: 8 }} /></Form.Item>
-                <Form.Item name="visibility" label="可见性" initialValue="PRIVATE"><Select options={[{ value: 'PRIVATE', label: '仅自己' }, { value: 'DEPARTMENT', label: '部门可见' }, { value: 'SHARED', label: '指定共享' }]} style={{ borderRadius: 8 }} /></Form.Item>
+                <Form.Item name="visibility" label="可见性" initialValue="DEPARTMENT" tooltip="默认部门可见，便于团队协同；可改为仅自己或全员"><Select options={[{ value: 'DEPARTMENT', label: '◑ 部门可见（默认）' }, { value: 'PRIVATE', label: '◔ 仅自己' }, { value: 'SHARED', label: '◉ 全员可见' }]} style={{ borderRadius: 8 }} /></Form.Item>
               </div>
               <Form.Item name="projectId" label="归属项目" tooltip="不选则为散任务">
                 <Select

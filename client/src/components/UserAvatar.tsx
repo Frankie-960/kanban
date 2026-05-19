@@ -9,7 +9,7 @@ export default function UserAvatar({ name, size = 36 }: UserAvatarProps) {
       width: size,
       height: size,
       borderRadius: 8,
-      background: '#0071e3',
+      background: '#1F3D2E',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',

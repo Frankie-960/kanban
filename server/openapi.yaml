@@ -1,0 +1,466 @@
+openapi: 3.1.0
+info:
+  title: 采购看板 API
+  version: 0.1.0
+  description: |
+    Procurement Kanban backend API.
+    Use `/auth/login` (human) or hold a long-lived token issued by `/auth/agent-token` (machine / MCP).
+    All authenticated requests must include `Authorization: Bearer <token>`.
+
+servers:
+  - url: http://localhost:3001/api
+    description: Local dev
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: auth
+  - name: items
+  - name: projects
+  - name: experiences
+  - name: summary
+
+paths:
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Login with email + password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200':
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string }
+                  user: { $ref: '#/components/schemas/User' }
+        '401': { description: Invalid credentials }
+
+  /auth/me:
+    get:
+      tags: [auth]
+      summary: Get the current user (works for agent tokens too)
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+
+  /auth/agent-token:
+    post:
+      tags: [auth]
+      summary: Issue a long-lived agent JWT (for MCP / programmatic agents)
+      description: |
+        Caller must be authenticated as a human user (i.e. logged in via /auth/login).
+        Returned token carries `{ agent: true, scope, agentName }` claims and a TTL up to 365 days.
+        Currently only `scope=rw` is enforced; `ro` reserved for future RO middleware.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, description: 'Friendly token label', default: agent }
+                scope: { type: string, enum: [ro, rw], default: rw }
+                days: { type: integer, minimum: 1, maximum: 365, default: 365 }
+      responses:
+        '200':
+          description: Token issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string }
+                  expiresInDays: { type: integer }
+                  scope: { type: string }
+                  agentName: { type: string }
+
+  /items:
+    get:
+      tags: [items]
+      summary: List items (visibility-filtered)
+      parameters:
+        - in: query
+          name: view
+          schema: { type: string, enum: [personal, department] }
+          description: Defaults to personal (only own items). Set to "department" to include team's DEPARTMENT-visible items.
+        - in: query
+          name: status
+          schema: { type: string, enum: [TODO, IN_PROGRESS, COMPLETED] }
+        - in: query
+          name: priority
+          schema: { type: string, enum: [URGENT, HIGH, MEDIUM, LOW] }
+        - in: query
+          name: category
+          schema: { type: string }
+        - in: query
+          name: projectId
+          schema: { type: string }
+          description: 'Pass the literal string "null" to filter inbox items (no project)'
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 200 }
+      responses:
+        '200':
+          description: Items list (paginated object if page+limit, else flat array)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items: { $ref: '#/components/schemas/Item' }
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Item' }
+                      total: { type: integer }
+                      page: { type: integer }
+                      limit: { type: integer }
+                      pages: { type: integer }
+    post:
+      tags: [items]
+      summary: Create an item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ItemCreate' }
+      responses:
+        '200':
+          description: Created item
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Item' }
+
+  /items/summary:
+    get:
+      tags: [summary]
+      summary: Aggregate financial + status summary (respects view + filters)
+      parameters:
+        - $ref: '#/components/parameters/View'
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: Aggregated stats
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totals: { type: object }
+                  byCategory: { type: array, items: { type: object } }
+                  byStatus: { type: array, items: { type: object } }
+                  overBudgetItems: { type: array, items: { type: object } }
+                  monthly: { type: object }
+
+  /items/{id}:
+    get:
+      tags: [items]
+      summary: Get a single item (includes statusHistories, reminders, project)
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      responses:
+        '200':
+          description: Item
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Item' }
+        '404': { description: Not found or not visible }
+    put:
+      tags: [items]
+      summary: Update item (owner only)
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ItemPatch' }
+      responses:
+        '200':
+          description: Updated item
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Item' }
+
+  /items/{id}/status:
+    patch:
+      tags: [items]
+      summary: Update main status (writes StatusHistory automatically)
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [TODO, IN_PROGRESS, COMPLETED] }
+                subStatus: { type: string, nullable: true }
+      responses:
+        '200':
+          description: Updated item
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Item' }
+
+  /items/{id}/history:
+    get:
+      tags: [items]
+      summary: Status change history (visibility-checked)
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      responses:
+        '200':
+          description: History entries (desc by createdAt)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/StatusHistory' }
+
+  /projects:
+    get:
+      tags: [projects]
+      summary: List projects (visibility-filtered)
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [PLANNING, ACTIVE, ON_HOLD, COMPLETED, CANCELLED] }
+        - in: query
+          name: search
+          schema: { type: string }
+      responses:
+        '200':
+          description: Projects with aggregated counts/amounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Project' }
+    post:
+      tags: [projects]
+      summary: Create project (owner = caller unless overridden)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProjectCreate' }
+      responses:
+        '200':
+          description: Created project
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Project' }
+
+  /projects/{id}:
+    get:
+      tags: [projects]
+      summary: Get a project with its items
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      responses:
+        '200':
+          description: Project + items
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Project' }
+
+  /projects/{id}/summary:
+    get:
+      tags: [projects]
+      summary: Project progress + budget summary
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      responses:
+        '200':
+          description: Project summary
+          content:
+            application/json:
+              schema: { type: object }
+
+  /experiences:
+    get:
+      tags: [experiences]
+      summary: List experiences (filter by itemId optional)
+      parameters:
+        - in: query
+          name: itemId
+          schema: { type: string }
+      responses:
+        '200':
+          description: Experience entries
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Experience' } }
+    post:
+      tags: [experiences]
+      summary: Add an experience entry for an item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [itemId, content]
+              properties:
+                itemId: { type: string }
+                content: { type: string }
+      responses:
+        '200':
+          description: Created entry
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Experience' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Id:
+      in: path
+      name: id
+      required: true
+      schema: { type: string }
+    View:
+      in: query
+      name: view
+      schema: { type: string, enum: [personal, department] }
+    ProjectId:
+      in: query
+      name: projectId
+      schema: { type: string }
+  schemas:
+    User:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string }
+        role: { type: string }
+        departmentId: { type: string, nullable: true }
+    Item:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        progress: { type: string, nullable: true }
+        status: { type: string, enum: [TODO, IN_PROGRESS, COMPLETED] }
+        subStatus: { type: string, nullable: true }
+        priority: { type: string, enum: [URGENT, HIGH, MEDIUM, LOW] }
+        category: { type: string }
+        dueDate: { type: string, format: date-time, nullable: true }
+        visibility: { type: string, enum: [PRIVATE, DEPARTMENT, SHARED] }
+        userId: { type: string }
+        departmentId: { type: string, nullable: true }
+        projectId: { type: string, nullable: true }
+        estimatedAmount: { type: number, nullable: true }
+        finalAmount: { type: number, nullable: true }
+        currency: { type: string, nullable: true }
+        supplierName: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        completedAt: { type: string, format: date-time, nullable: true }
+    ItemCreate:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string }
+        description: { type: string }
+        priority: { type: string, enum: [URGENT, HIGH, MEDIUM, LOW] }
+        category: { type: string }
+        status: { type: string, enum: [TODO, IN_PROGRESS, COMPLETED] }
+        subStatus: { type: string }
+        dueDate: { type: string, format: date-time }
+        visibility: { type: string, enum: [PRIVATE, DEPARTMENT, SHARED], default: DEPARTMENT }
+        departmentId: { type: string }
+        projectId: { type: string }
+        estimatedAmount: { type: number }
+        finalAmount: { type: number }
+        currency: { type: string }
+        supplierName: { type: string }
+        supplierAmount: { type: number }
+        requesterDepartment: { type: string }
+    ItemPatch:
+      allOf:
+        - $ref: '#/components/schemas/ItemCreate'
+      description: All fields are optional in PUT.
+    Project:
+      type: object
+      properties:
+        id: { type: string }
+        code: { type: string, nullable: true }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        status: { type: string }
+        ownerId: { type: string }
+        departmentId: { type: string, nullable: true }
+        totalBudget: { type: number, nullable: true }
+        currency: { type: string, nullable: true }
+        startDate: { type: string, format: date-time, nullable: true }
+        dueDate: { type: string, format: date-time, nullable: true }
+        visibility: { type: string, enum: [PRIVATE, DEPARTMENT, SHARED] }
+        itemCount: { type: integer }
+        completedCount: { type: integer }
+    ProjectCreate:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        code: { type: string }
+        description: { type: string }
+        status: { type: string }
+        ownerId: { type: string }
+        departmentId: { type: string }
+        totalBudget: { type: number }
+        currency: { type: string }
+        startDate: { type: string, format: date-time }
+        dueDate: { type: string, format: date-time }
+        visibility: { type: string, enum: [PRIVATE, DEPARTMENT, SHARED], default: DEPARTMENT }
+    StatusHistory:
+      type: object
+      properties:
+        id: { type: string }
+        itemId: { type: string }
+        fromStatus: { type: string, nullable: true }
+        toStatus: { type: string, nullable: true }
+        fromSubStatus: { type: string, nullable: true }
+        toSubStatus: { type: string, nullable: true }
+        operatorId: { type: string }
+        operator:
+          type: object
+          properties:
+            id: { type: string }
+            name: { type: string }
+        createdAt: { type: string, format: date-time }
+    Experience:
+      type: object
+      properties:
+        id: { type: string }
+        itemId: { type: string }
+        userId: { type: string }
+        content: { type: string }
+        createdAt: { type: string, format: date-time }

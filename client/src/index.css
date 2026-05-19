@@ -2,20 +2,26 @@
    Design Tokens - Apple-inspired Minimalist
    ======================================== */
 :root {
-  --color-primary: #0071e3;
-  --color-primary-hover: #0077ed;
+  --color-primary: #1F3D2E;
+  --color-primary-hover: #2F5642;
+  --color-primary-pressed: #14291F;
+  --color-primary-soft: rgba(31,61,46,0.06);
+  --color-primary-tint: rgba(31,61,46,0.12);
   --color-success: #34c759;
   --color-warning: #ff9f0a;
   --color-danger: #ff453a;
   --color-todo: #ff9f0a;
-  --color-in-progress: #0abde3;
+  --color-in-progress: #4a7b5e;
   --color-completed: #34c759;
 
-  --bg-page: #f5f5f7;
+  --ink: #1A1A1A;
+  --bg-page: #f4f5f6;
   --bg-card: #ffffff;
-  --bg-hover: #f5f5f5;
+  --bg-hover: #f0f1f3;
+  --bg-soft: #ededee;
+  --bg-softer: #f9f9fa;
 
-  --text-primary: #1d1d1f;
+  --text-primary: #1A1A1A;
   --text-secondary: #86868b;
   --text-tertiary: #d2d2d7;
 
@@ -23,21 +29,45 @@
   --radius-md: 12px;
   --radius-lg: 16px;
 
-  --shadow-card: 0 2px 12px rgba(0,0,0,0.04);
-  --shadow-hover: 0 8px 30px rgba(0,0,0,0.08);
+  --shadow-card: 0 1px 2px rgba(0,0,0,0.03);
+  --shadow-hover: 0 4px 14px rgba(0,0,0,0.07);
   --transition: 0.2s ease;
+
+  --pill-blue-bg:   #eff5ff; --pill-blue-fg:   #1e40af;
+  --pill-green-bg:  #ecfdf3; --pill-green-fg:  #15803d;
+  --pill-amber-bg:  #fef6e7; --pill-amber-fg:  #92400e;
+  --pill-red-bg:    #fef2f2; --pill-red-fg:    #b91c1c;
+  --pill-gray-bg:   #f1f3f5; --pill-gray-fg:   #475467;
+  --pill-purple-bg: #f3f0ff; --pill-purple-fg: #5b21b6;
 }
 
 body.dark-mode,
 .dark-layout {
+  --color-primary: #5A9170;
+  --color-primary-hover: #6FA688;
+  --color-primary-pressed: #4A7B5E;
+  --color-primary-soft: rgba(90,145,112,0.12);
+  --color-primary-tint: rgba(90,145,112,0.22);
+  --color-in-progress: #6FA688;
+
+  --ink: #E6EDF3;
   --bg-page: #0d1117;
   --bg-card: #161b22;
   --bg-hover: #21262d;
+  --bg-soft: #1c222b;
+  --bg-softer: #181d25;
   --text-primary: #e6edf3;
   --text-secondary: #8b949e;
   --text-tertiary: #30363d;
-  --shadow-card: 0 2px 12px rgba(0,0,0,0.3);
-  --shadow-hover: 0 8px 30px rgba(0,0,0,0.4);
+  --shadow-card: 0 1px 2px rgba(0,0,0,0.22);
+  --shadow-hover: 0 4px 14px rgba(0,0,0,0.36);
+
+  --pill-blue-bg:   rgba(56,139,253,0.15);  --pill-blue-fg:   #79b8ff;
+  --pill-green-bg:  rgba(63,185,80,0.15);   --pill-green-fg:  #7ee787;
+  --pill-amber-bg:  rgba(187,128,9,0.18);   --pill-amber-fg:  #f0b429;
+  --pill-red-bg:    rgba(248,81,73,0.16);   --pill-red-fg:    #ff8783;
+  --pill-gray-bg:   rgba(139,148,158,0.18); --pill-gray-fg:   #c9d1d9;
+  --pill-purple-bg: rgba(163,113,247,0.18); --pill-purple-fg: #d2a8ff;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -67,11 +97,11 @@ body {
   flex: 1;
   min-width: 280px;
   max-width: 360px;
-  background: var(--bg-card);
-  border-radius: var(--radius-lg);
-  padding: 16px;
-  box-shadow: var(--shadow-card);
-  border: 1px solid var(--text-tertiary);
+  background: transparent;
+  border-radius: 0;
+  padding: 8px 6px;
+  box-shadow: none;
+  border: none;
 }
 
 .kanban-column-header {
@@ -109,36 +139,82 @@ body {
   padding: 14px;
   box-shadow: var(--shadow-card);
   cursor: pointer;
-  transition: all var(--transition);
+  transition: box-shadow var(--transition), transform var(--transition);
   border-left: 3px solid transparent;
-  border: 1px solid var(--text-tertiary);
+  border: 1px solid var(--bg-soft);
 }
 
 .kanban-card:hover {
   box-shadow: var(--shadow-hover);
-  transform: translateY(-2px);
-  border-color: var(--color-primary);
+  transform: translateY(-1px);
 }
 
-.kanban-card.priority-urgent { border-left-color: var(--color-danger); background: linear-gradient(135deg, #fff5f5 0%, var(--bg-card) 50%); }
-.kanban-card.priority-high { border-left-color: var(--color-warning); background: linear-gradient(135deg, #fff7e6 0%, var(--bg-card) 50%); }
-.kanban-card.priority-medium { border-left-color: var(--color-warning); }
-.kanban-card.priority-low { border-left-color: var(--text-tertiary); opacity: 0.85; }
+.kanban-card.priority-urgent { border-left-color: var(--color-danger); }
+.kanban-card.priority-high   { border-left-color: var(--color-warning); }
+.kanban-card.priority-medium { border-left-color: var(--color-in-progress); }
+.kanban-card.priority-low    { border-left-color: var(--text-tertiary); }
 
 .kanban-card .ant-tag { border-radius: 6px; }
 
 /* ========================================
    Cards
    ======================================== */
+/* 「无界」全局：Ant Card 默认无背景、无边框、无阴影 */
 .ant-card {
-  border-radius: var(--radius-lg) !important;
-  border: 1px solid var(--text-tertiary) !important;
-  box-shadow: var(--shadow-card) !important;
-  transition: all var(--transition) !important;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+.ant-card > .ant-card-body { padding: 0 !important; }
+.ant-card > .ant-card-head {
+  border-bottom: none !important;
+  padding: 0 0 16px !important;
+  min-height: auto !important;
+  margin-bottom: 0;
 }
 
-.ant-card:hover {
-  box-shadow: var(--shadow-hover) !important;
+/* 显式重心容器（手动添加 .surface 类） */
+.surface {
+  background: var(--bg-soft);
+  border-radius: 18px;
+  padding: 28px;
+}
+.surface-soft {
+  background: var(--bg-softer);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+/* 章节/页面标题工具类 */
+.page-heading {
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0;
+  line-height: 1.1;
+}
+.page-subhead {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin: 12px 0 0;
+  font-weight: 400;
+}
+.section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 14px;
+}
+.section-heading {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: 0;
 }
 
 /* ========================================
@@ -168,32 +244,155 @@ body {
 .ant-input-affix-wrapper-focused,
 .ant-select-focused .ant-select-selector {
   border-color: var(--color-primary) !important;
-  box-shadow: 0 0 0 3px rgba(0,113,227,0.1) !important;
+  box-shadow: 0 0 0 3px var(--color-primary-soft) !important;
 }
 
-.ant-tag { border-radius: 6px !important; }
+/* ========================================
+   Pastel Tags (low-saturation, borderless)
+   ======================================== */
+.ant-tag {
+  border: none !important;
+  background: var(--pill-gray-bg) !important;
+  color: var(--pill-gray-fg) !important;
+  border-radius: 6px !important;
+  padding: 1px 8px !important;
+  line-height: 18px !important;
+  font-weight: 500;
+}
+.ant-tag-blue,
+.ant-tag-processing  { background: var(--pill-blue-bg)   !important; color: var(--pill-blue-fg)   !important; }
+.ant-tag-green,
+.ant-tag-success     { background: var(--pill-green-bg)  !important; color: var(--pill-green-fg)  !important; }
+.ant-tag-gold,
+.ant-tag-orange,
+.ant-tag-warning     { background: var(--pill-amber-bg)  !important; color: var(--pill-amber-fg)  !important; }
+.ant-tag-red,
+.ant-tag-volcano,
+.ant-tag-error,
+.ant-tag-magenta     { background: var(--pill-red-bg)    !important; color: var(--pill-red-fg)    !important; }
+.ant-tag-purple,
+.ant-tag-geekblue,
+.ant-tag-cyan        { background: var(--pill-purple-bg) !important; color: var(--pill-purple-fg) !important; }
 
 .ant-progress-bg { transition: all 0.3s ease !important; }
 
-.ant-table { border-radius: var(--radius-md); }
+.ant-table { border-radius: var(--radius-md); background: transparent !important; }
 .ant-table-thead > tr > th {
-  background: var(--bg-hover) !important;
-  border-color: var(--text-tertiary) !important;
+  background: var(--bg-soft) !important;
+  border-color: var(--bg-soft) !important;
+  font-weight: 600;
 }
-.ant-table-tbody > tr > td { border-color: var(--text-tertiary) !important; }
-.ant-table-tbody > tr:hover > td { background: var(--bg-hover) !important; }
+.ant-table-tbody > tr > td { border-color: var(--bg-soft) !important; }
+.ant-table-tbody > tr:hover > td { background: var(--bg-soft) !important; }
+
+/* ========================================
+   Hover-reveal action buttons
+   ======================================== */
+.row-actions,
+.card-actions {
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+.ant-table-tbody > tr:hover .row-actions,
+.ant-table-tbody > tr:focus-within .row-actions,
+.kanban-card:hover .card-actions,
+.kanban-card:focus-within .card-actions { opacity: 1; }
+@media (hover: none) {
+  /* Touch devices: don't hide actions */
+  .row-actions, .card-actions { opacity: 1; }
+}
+
+/* ========================================
+   Swimlane Board
+   ======================================== */
+.swimlane-board {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px;
+}
+.swimlane-header-row {
+  display: grid;
+  grid-template-columns: 220px 1fr 1fr 1fr;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--bg-soft);
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-primary);
+  box-shadow: var(--shadow-card);
+}
+.swimlane-row {
+  display: grid;
+  grid-template-columns: 220px 1fr 1fr 1fr;
+  background: var(--bg-softer);
+  border-radius: 12px;
+  border: 1px solid var(--bg-soft);
+  overflow: hidden;
+}
+.swimlane-group-title {
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  border-right: 1px solid var(--bg-soft);
+  background: var(--bg-soft);
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 13px;
+}
+.swimlane-group-title .group-caret { color: var(--text-secondary); font-size: 11px; }
+.swimlane-group-title .group-label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.swimlane-cell {
+  padding: 10px;
+  max-height: 480px;
+  overflow-y: auto;
+  border-right: 1px solid var(--bg-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.swimlane-cell:last-child { border-right: none; }
+.swimlane-cell::-webkit-scrollbar { width: 6px; }
+.swimlane-cell::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 3px; }
+.swimlane-cell-empty {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 12px;
+  padding: 18px 0;
+  opacity: 0.65;
+}
+.swimlane-collapsed-body {
+  grid-column: 2 / -1;
+  padding: 14px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
 
 .ant-menu-item-selected {
-  background: rgba(0,113,227,0.1) !important;
+  background: var(--color-primary-tint) !important;
   border-radius: var(--radius-sm) !important;
+  color: var(--color-primary) !important;
 }
+.ant-btn-link { color: var(--color-primary) !important; }
+a { color: var(--color-primary); }
 
 .dark-mode .ant-card {
   background: var(--bg-card) !important;
 }
 
 .dark-mode .ant-menu-item-selected {
-  background: rgba(88,166,255,0.15) !important;
+  background: var(--color-primary-tint) !important;
 }
 
 .dark-mode .ant-badge-count {
@@ -219,9 +418,319 @@ body {
 .dark-mode .ant-menu-item-selected { color: var(--color-primary) !important; }
 
 /* ========================================
+   Round 3 · Kanban 全屏 toolbar
+   ======================================== */
+.kanban-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: rgba(244, 245, 246, 0.88);
+  backdrop-filter: saturate(140%) blur(10px);
+  -webkit-backdrop-filter: saturate(140%) blur(10px);
+  border-bottom: 1px solid var(--bg-soft);
+  margin: -24px -24px 20px;
+  padding: 14px 24px;
+}
+.dark-mode .kanban-toolbar { background: rgba(13, 17, 23, 0.88); }
+.kanban-toolbar .toolbar-spacer { flex: 1; }
+
+/* ========================================
+   Round 3 · 艾森豪威尔四象限 priority pill
+   ======================================== */
+.priority-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.priority-pill.q-IU { background: #fdf1f1; color: #7a2e2e; }
+.priority-pill.q-I  { background: #e8eaed; color: #475467; }
+.priority-pill.q-U  { background: #fef6e7; color: #92400e; }
+.priority-pill.q-N  { background: #f1f3f5; color: #86868b; }
+.dark-mode .priority-pill.q-IU { background: rgba(248,81,73,0.16); color: #ff9b96; }
+.dark-mode .priority-pill.q-I  { background: rgba(139,148,158,0.18); color: #c9d1d9; }
+.dark-mode .priority-pill.q-U  { background: rgba(187,128,9,0.18); color: #f0b429; }
+.dark-mode .priority-pill.q-N  { background: rgba(139,148,158,0.12); color: #8b949e; }
+
+/* 四象限矩阵 */
+.quadrant-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 20px;
+  min-height: 600px;
+}
+.quadrant-cell {
+  background: var(--bg-softer);
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  max-height: 540px;
+}
+.quadrant-IU { border-top: 3px solid #b91c1c; }
+.quadrant-I  { border-top: 3px solid var(--color-primary); }
+.quadrant-U  { border-top: 3px solid #92400e; }
+.quadrant-N  { border-top: 3px solid var(--text-tertiary); }
+.quadrant-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: 0.04em;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--bg-soft);
+  margin-bottom: 4px;
+}
+.quadrant-title .quadrant-count { font-size: 11px; color: var(--text-secondary); font-weight: 400; }
+.quadrant-empty { text-align: center; color: var(--text-secondary); font-size: 12px; padding: 20px 0; opacity: 0.6; }
+
+/* ========================================
+   Round 3 · 隐私微标
+   ======================================== */
+.vis-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: var(--pill-gray-bg);
+  color: var(--pill-gray-fg);
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  line-height: 16px;
+}
+.vis-pill .vis-icon { font-size: 10px; opacity: 0.8; }
+.vis-pill.vis-department { background: var(--color-primary-soft); color: var(--color-primary); }
+.vis-pill.vis-shared { background: #fef6e7; color: #92400e; }
+.dark-mode .vis-pill.vis-shared { background: rgba(187,128,9,0.18); color: #f0b429; }
+.vis-pill.vis-compact { padding: 1px 4px; }
+
+/* ========================================
+   Round 3 · 采购里程碑 stepper
+   ======================================== */
+.milestone-stepper {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 3px;
+  margin-top: 10px;
+}
+.milestone-seg {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--bg-soft);
+  transition: background 0.2s;
+}
+.milestone-seg.past    { background: var(--color-primary); opacity: 0.42; }
+.milestone-seg.current { background: var(--color-primary); }
+
+/* ========================================
+   Round 3 · SLA 呆滞预警
+   ======================================== */
+.kanban-card.stale {
+  box-shadow: inset 3px 0 0 #92400e, var(--shadow-card);
+}
+.stale-flag {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: #92400e;
+  font-weight: 500;
+}
+.dark-mode .stale-flag { color: #f0b429; }
+
+/* ========================================
+   Round 3 · Cmd+K 命令面板
+   ======================================== */
+.cmdk-modal .ant-modal-content {
+  padding: 0 !important;
+  border-radius: 14px !important;
+  overflow: hidden;
+  background: var(--bg-card) !important;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.18) !important;
+}
+.cmdk-input,
+.cmdk-input.ant-input {
+  font-size: 17px !important;
+  padding: 18px 22px !important;
+  border-bottom: 1px solid var(--bg-soft) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--ink) !important;
+}
+.cmdk-results {
+  max-height: 420px;
+  overflow-y: auto;
+  padding: 6px;
+}
+.cmdk-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--ink);
+}
+.cmdk-row.active { background: var(--color-primary-soft); }
+.cmdk-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background: var(--bg-soft);
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.cmdk-tag.tag-action { background: var(--color-primary-soft); color: var(--color-primary); }
+.cmdk-tag.tag-item   { background: var(--pill-blue-bg); color: var(--pill-blue-fg); }
+.cmdk-tag.tag-project{ background: var(--pill-purple-bg); color: var(--pill-purple-fg); }
+.cmdk-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cmdk-sub {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-family: 'SF Mono', Consolas, monospace;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.cmdk-empty {
+  text-align: center;
+  padding: 36px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.cmdk-footer {
+  display: flex;
+  gap: 18px;
+  justify-content: flex-end;
+  padding: 10px 16px;
+  border-top: 1px solid var(--bg-soft);
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: var(--bg-softer);
+}
+
+.cmdk-hint-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--bg-soft);
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+  border: none;
+  font-family: 'SF Mono', Consolas, monospace;
+  transition: background 0.15s;
+}
+.cmdk-hint-btn:hover { background: var(--color-primary-soft); color: var(--color-primary); }
+.cmdk-hint-btn kbd {
+  font-family: inherit;
+  background: var(--bg-card);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 11px;
+  border: 1px solid var(--text-tertiary);
+}
+
+/* ========================================
+   Round 3 · 多选模式 + ActionBar
+   ======================================== */
+.kanban-card.selected {
+  background: var(--color-primary-soft);
+  box-shadow: inset 3px 0 0 var(--color-primary), var(--shadow-card);
+}
+.kanban-card.select-mode .card-actions { display: none; }
+.card-checkbox {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1.5px solid var(--text-tertiary);
+  background: var(--bg-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #fff;
+  pointer-events: none;
+}
+.kanban-card.selected .card-checkbox {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.kanban-card { position: relative; }
+
+.action-bar {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 14px 40px rgba(0,0,0,0.22);
+  z-index: 50;
+  animation: actionbar-in 0.18s ease;
+}
+@keyframes actionbar-in {
+  from { transform: translate(-50%, 12px); opacity: 0; }
+  to { transform: translate(-50%, 0); opacity: 1; }
+}
+.action-bar .action-count {
+  font-size: 13px;
+  opacity: 0.85;
+  margin-right: 6px;
+  font-weight: 500;
+}
+.action-bar .ant-btn {
+  background: rgba(255,255,255,0.1) !important;
+  color: #fff !important;
+  border: none !important;
+  font-size: 12px !important;
+}
+.action-bar .ant-btn:hover {
+  background: rgba(255,255,255,0.18) !important;
+}
+.action-bar .ant-btn-dangerous {
+  background: rgba(248,81,73,0.25) !important;
+}
+
+/* ========================================
    Responsive
    ======================================== */
 @media (max-width: 768px) {
   .kanban-board { gap: 12px; padding: 12px; }
   .kanban-column { min-width: 260px; }
+  .quadrant-grid { grid-template-columns: 1fr; grid-template-rows: repeat(4, auto); }
+  .action-bar { width: calc(100% - 32px); justify-content: center; flex-wrap: wrap; }
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Card, Table, Button, Modal, Form, Input, Select, DatePicker, InputNumber, Tag, Progress, message, Space, Popconfirm } from 'antd';
+import { Table, Button, Modal, Form, Input, Select, DatePicker, InputNumber, Tag, Progress, message, Space, Popconfirm, Tooltip } from 'antd';
 import { PlusOutlined, FolderOpenOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
@@ -91,8 +91,25 @@ export default function Projects() {
     {
       title: '项目名称',
       dataIndex: 'name',
+      minWidth: 220,
+      ellipsis: { showTitle: false },
       render: (v: string, r: Project) => (
-        <a onClick={() => navigate(`/projects/${r.id}`)} style={{ fontWeight: 500 }}>{v}</a>
+        <Tooltip title={v} placement="topLeft" mouseEnterDelay={0.3}>
+          <a
+            onClick={() => navigate(`/projects/${r.id}`)}
+            style={{
+              fontWeight: 500,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              lineHeight: 1.45,
+              wordBreak: 'break-word',
+            }}
+          >
+            {v}
+          </a>
+        </Tooltip>
       ),
     },
     {
@@ -152,7 +169,7 @@ export default function Projects() {
       title: '操作',
       width: 140,
       render: (_: unknown, r: Project) => (
-        <Space size="small">
+        <Space size="small" className="row-actions">
           <Button type="link" size="small" icon={<FolderOpenOutlined />} onClick={() => navigate(`/projects/${r.id}`)}>打开</Button>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEdit(r)}>编辑</Button>
           <Popconfirm title="确认删除？子任务的项目关联会被解除" onConfirm={() => handleDelete(r.id)}>
@@ -165,18 +182,21 @@ export default function Projects() {
 
   return (
     <div>
-      <Card
-        title="项目管理"
-        extra={<Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>新建项目</Button>}
-      >
-        <Table
-          rowKey="id"
-          loading={loading}
-          dataSource={projects}
-          columns={columns}
-          pagination={{ pageSize: 20, showSizeChanger: true }}
-        />
-      </Card>
+      <div style={{ marginBottom: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 16 }}>
+        <div>
+          <h1 className="page-heading">项目管理</h1>
+          <p className="page-subhead">{projects.length} 个项目 · 按更新时间排序</p>
+        </div>
+        <Button type="primary" icon={<PlusOutlined />} size="large" onClick={openCreate}>新建项目</Button>
+      </div>
+      <Table
+        rowKey="id"
+        loading={loading}
+        dataSource={projects}
+        columns={columns}
+        pagination={{ pageSize: 20, showSizeChanger: true }}
+        scroll={{ x: 1200 }}
+      />
 
       <Modal
         title={editing ? '编辑项目' : '新建项目'}

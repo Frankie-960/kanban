@@ -186,7 +186,7 @@ export default function Reminders() {
       {reminders.length === 0 && !loading && (
         <Card style={{ background: theme.cardBg, border: `1px solid ${theme.borderColor}`, borderRadius: 16 }}>
           <div style={{ textAlign: 'center', padding: 48, color: theme.textSecondary }}>
-            <BellOutlined style={{ fontSize: 48, marginBottom: 16, color: '#0071e3' }} />
+            <BellOutlined style={{ fontSize: 48, marginBottom: 16, color: '#1F3D2E' }} />
             <p style={{ fontSize: 15 }}>暂无提醒设置</p>
             <Button type="primary" onClick={() => setModalVisible(true)} style={{ borderRadius: 8 }}>
               添加第一个提醒

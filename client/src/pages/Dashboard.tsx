@@ -1,17 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Card, Row, Col, Statistic, List, Tag, Progress, Button, Table, Avatar, Space, Radio, Skeleton } from 'antd';
-import {
-  CheckCircleOutlined,
-  ClockCircleOutlined,
-  ExclamationCircleOutlined,
-  PlusOutlined,
-  AlertOutlined,
-  FileTextOutlined,
-} from '@ant-design/icons';
+import { Card, Row, Col, Statistic, List, Tag, Button, Table, Avatar, Space, Radio, Skeleton } from 'antd';
+import { PlusOutlined, FileTextOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, Label, CartesianGrid } from 'recharts';
 import { useAppStore } from '../stores/appStore';
-import { PRIORITY_LABELS, CATEGORY_LABELS, STATUS_LABELS, PRIORITY_COLORS, STATUS_COLORS, CATEGORY_CONFIG } from '../types';
+import { CATEGORY_LABELS, STATUS_LABELS, PRIORITY_QUADRANT, STATUS_COLORS, CATEGORY_CONFIG } from '../types';
 import { departmentsAPI } from '../services/api';
 import { isOverdue } from '../utils/date';
 import type { User } from '../types';
@@ -91,13 +84,13 @@ export default function Dashboard() {
 
   const renderPersonalDashboard = () => (
     <div>
-      <div style={{ marginBottom: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+      <div style={{ marginBottom: 48, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 16 }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: 28, fontWeight: 600, color: textPrimary, letterSpacing: -0.5 }}>
+          <h1 className="page-heading">
             {getGreeting()}，{user?.name}
-          </h2>
-          <p style={{ color: textSecondary, margin: '8px 0 0', fontSize: 14 }}>
-            {dayjs().format('YYYY年MM月DD日')} · 本周完成率 {completionRate}%
+          </h1>
+          <p className="page-subhead">
+            {dayjs().format('YYYY 年 MM 月 DD 日')} · 本周完成率 {completionRate}%
           </p>
         </div>
         <Space size={12}>
@@ -121,84 +114,93 @@ export default function Dashboard() {
         </Space>
       </div>
 
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+      <Row gutter={[24, 24]} style={{ marginBottom: 56 }}>
         {initialLoading ? (
           <>
-            {[1, 2, 3, 4].map((i) => (
-              <Col xs={12} sm={12} lg={6} key={i}>
-                <Card style={{ background: cardBg, border: `1px solid ${borderColor}`, borderRadius: 16 }}>
-                  <Skeleton active paragraph={{ rows: 1 }} />
-                </Card>
+            <Col xs={24} lg={12}>
+              <div className="surface" style={{ minHeight: 200 }}>
+                <Skeleton active paragraph={{ rows: 2 }} />
+              </div>
+            </Col>
+            {[1, 2, 3].map((i) => (
+              <Col xs={8} lg={4} key={i}>
+                <Skeleton active paragraph={{ rows: 1 }} />
               </Col>
             ))}
           </>
         ) : (
-          [
-            { title: '待办事项', value: todoItems.length, color: '#ff9f43', icon: <ClockCircleOutlined /> },
-            { title: '进行中', value: inProgressItems.length, color: '#0abde3', icon: <ExclamationCircleOutlined /> },
-            { title: '已完成', value: completedItems.length, color: '#10b341', icon: <CheckCircleOutlined /> },
-            { title: '已逾期', value: overdueItems.length, color: '#ff5252', icon: <AlertOutlined /> },
-          ].map((stat, index) => (
-            <Col xs={12} sm={12} lg={6} key={index}>
-              <Card
+          <>
+            <Col xs={24} lg={12}>
+              <div
+                className="surface"
                 style={{
-                  background: cardBg,
-                  border: `1px solid ${borderColor}`,
-                  borderRadius: 16,
-                  boxShadow: 'none',
+                  padding: '32px 36px',
+                  minHeight: 200,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <div
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 12,
-                      background: `${stat.color}15`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <span style={{ fontSize: 22, color: stat.color }}>{stat.icon}</span>
+                <div className="section-title">本周完成</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 14 }}>
+                  <span style={{ fontSize: 72, fontWeight: 700, letterSpacing: '-0.04em', color: 'var(--ink)', lineHeight: 1 }}>
+                    {completedItems.length}
+                  </span>
+                  <span style={{ fontSize: 16, color: 'var(--text-secondary)' }}>事项</span>
+                </div>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text-secondary)', marginBottom: 6 }}>
+                    <span>完成率</span>
+                    <span style={{ color: 'var(--color-primary)', fontWeight: 600 }}>{completionRate}%</span>
                   </div>
-                  <div>
-                    <div style={{ fontSize: 13, color: textSecondary }}>{stat.title}</div>
-                    <div style={{ fontSize: 28, fontWeight: 600, color: textPrimary }}>{stat.value}</div>
+                  <div style={{ height: 4, background: 'var(--bg-softer)', borderRadius: 2, overflow: 'hidden' }}>
+                    <div style={{ width: `${completionRate}%`, height: '100%', background: 'var(--color-primary)', borderRadius: 2, transition: 'width 0.4s ease' }} />
                   </div>
                 </div>
-              </Card>
+              </div>
             </Col>
-          ))
+
+            {[
+              { label: '待办', value: todoItems.length, accent: '#ff9f43' },
+              { label: '进行中', value: inProgressItems.length, accent: 'var(--color-primary)' },
+              { label: '已逾期', value: overdueItems.length, accent: '#ff5252' },
+            ].map((s) => (
+              <Col xs={8} lg={4} key={s.label}>
+                <div style={{ padding: '12px 4px' }}>
+                  <div className="section-title" style={{ marginBottom: 10 }}>{s.label}</div>
+                  <div style={{ fontSize: 44, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.03em', lineHeight: 1 }}>
+                    {s.value}
+                  </div>
+                  <div style={{ width: 28, height: 2, background: s.accent, marginTop: 14 }} />
+                </div>
+              </Col>
+            ))}
+          </>
         )}
       </Row>
 
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+      <Row gutter={[40, 48]} style={{ marginBottom: 24 }}>
         <Col xs={24} lg={16}>
-          <Card
-            title={<span style={{ fontSize: 16, fontWeight: 600, color: textPrimary }}>📝 我的任务</span>}
-            style={{ background: cardBg, border: `1px solid ${borderColor}`, borderRadius: 16 }}
-            extra={<Radio.Group
-              value={taskFilter}
-              onChange={(e) => setTaskFilter(e.target.value)}
-              optionType="button"
-              buttonStyle="solid"
-              size="small"
-            >
-              <Radio.Button value="ALL">全部</Radio.Button>
-              <Radio.Button value="TODO">待办</Radio.Button>
-              <Radio.Button value="IN_PROGRESS">进行中</Radio.Button>
-              <Radio.Button value="COMPLETED">已完成</Radio.Button>
-            </Radio.Group>}
-          >
+          <div style={{ marginBottom: 48 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              <h2 className="section-heading">我的任务</h2>
+              <Radio.Group
+                value={taskFilter}
+                onChange={(e) => setTaskFilter(e.target.value)}
+                optionType="button"
+                buttonStyle="solid"
+                size="small"
+              >
+                <Radio.Button value="ALL">全部</Radio.Button>
+                <Radio.Button value="TODO">待办</Radio.Button>
+                <Radio.Button value="IN_PROGRESS">进行中</Radio.Button>
+                <Radio.Button value="COMPLETED">已完成</Radio.Button>
+              </Radio.Group>
+            </div>
             {initialLoading ? (
               <Skeleton active paragraph={{ rows: 4 }} />
             ) : (
               <>
-                <div style={{ marginBottom: 16 }}>
-                  <span style={{ color: textSecondary, marginRight: 12 }}>本周完成率</span>
-                  <Progress percent={completionRate} status="active" style={{ width: 200, display: 'inline-block' }} />
-                </div>
                 <List
                   size="small"
                   dataSource={filteredListItems.slice(0, 5)}
@@ -215,9 +217,9 @@ export default function Dashboard() {
                         }
                         description={
                           <Space size={4}>
-                            <Tag color={PRIORITY_COLORS[item.priority]} style={{ borderRadius: 6 }}>
-                              {PRIORITY_LABELS[item.priority]}
-                            </Tag>
+                            <span className={`priority-pill q-${PRIORITY_QUADRANT[item.priority].quadrant}`}>
+                              {PRIORITY_QUADRANT[item.priority].label}
+                            </span>
                             <Tag style={{ borderRadius: 6 }}>{CATEGORY_LABELS[item.category]}</Tag>
                             {item.dueDate && (
                               <span style={{ color: isOverdue(item) ? '#ff5252' : textSecondary, fontSize: 12 }}>
@@ -242,24 +244,24 @@ export default function Dashboard() {
                   }}
                 />
                 {filteredListItems.length > 5 && (
-                  <Button type="link" onClick={() => navigate('/list')} style={{ padding: 0, marginTop: 8 }}>
+                  <Button type="link" onClick={() => navigate('/list')} style={{ padding: 0, marginTop: 12 }}>
                     查看全部 ({filteredListItems.length})
                   </Button>
                 )}
               </>
             )}
-          </Card>
+          </div>
 
           {overdueItems.length > 0 && (
-            <Card
-              title={<span style={{ fontSize: 16, fontWeight: 600, color: '#ff5252' }}>⚠️ 已逾期事项</span>}
-              style={{ background: cardBg, border: `1px solid #ff525230`, borderRadius: 16, marginTop: 16 }}
-            >
+            <div style={{ marginBottom: 48 }}>
+              <h2 className="section-heading" style={{ color: '#ff5252', marginBottom: 18 }}>
+                已逾期事项
+              </h2>
               <List
                 size="small"
                 dataSource={overdueItems.slice(0, 3)}
                 renderItem={(item) => (
-                  <List.Item>
+                  <List.Item style={{ borderBottom: '1px solid var(--bg-soft)' }}>
                     <List.Item.Meta
                       title={<span style={{ color: '#ff5252', fontWeight: 500 }}>{item.title}</span>}
                       description={`逾期 ${dayjs().diff(dayjs(item.dueDate), 'day')} 天`}
@@ -268,68 +270,106 @@ export default function Dashboard() {
                   </List.Item>
                 )}
               />
-            </Card>
+            </div>
           )}
         </Col>
 
         <Col xs={24} lg={8}>
-          <Card
-            title={<span style={{ fontSize: 16, fontWeight: 600, color: textPrimary }}>📊 分类统计</span>}
-            style={{ background: cardBg, border: `1px solid ${borderColor}`, borderRadius: 16 }}
-          >
+          <div style={{ marginBottom: 48 }}>
+            <h2 className="section-heading" style={{ marginBottom: 18 }}>分类统计</h2>
             {initialLoading ? (
               <Skeleton active paragraph={{ rows: 4 }} />
             ) : categoryData.length > 0 ? (
-              <>
-                <ResponsiveContainer width="100%" height={200}>
-                  <PieChart>
-                    <Pie
-                      data={categoryData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={55}
-                      outerRadius={80}
-                      paddingAngle={4}
-                      dataKey="value"
-                    >
-                      {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
-                  {categoryData.map((cat) => (
-                    <Tag key={cat.name} color={cat.color} style={{ padding: '4px 12px', borderRadius: 6 }}>{cat.name} ({cat.value})</Tag>
-                  ))}
-                </div>
-              </>
+              <ResponsiveContainer width="100%" height={240}>
+                <PieChart>
+                  <Pie
+                    data={categoryData}
+                    cx="38%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={88}
+                    paddingAngle={3}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {categoryData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                    <Label
+                      position="center"
+                      content={({ viewBox }: any) => {
+                        const cx = viewBox?.cx ?? 0;
+                        const cy = viewBox?.cy ?? 0;
+                        return (
+                          <g>
+                            <text x={cx} y={cy - 6} textAnchor="middle" style={{ fontSize: 24, fontWeight: 600, fill: textPrimary }}>
+                              {displayItems.length}
+                            </text>
+                            <text x={cx} y={cy + 16} textAnchor="middle" style={{ fontSize: 11, fill: textSecondary }}>
+                              总任务
+                            </text>
+                          </g>
+                        );
+                      }}
+                    />
+                  </Pie>
+                  <Tooltip />
+                  <Legend
+                    layout="vertical"
+                    align="right"
+                    verticalAlign="middle"
+                    iconType="circle"
+                    iconSize={8}
+                    formatter={(value: string, entry: any) => (
+                      <span style={{ color: textSecondary, fontSize: 12 }}>
+                        {value} <span style={{ color: textPrimary, fontWeight: 500 }}>({entry?.payload?.value ?? 0})</span>
+                      </span>
+                    )}
+                    wrapperStyle={{ fontSize: 12, paddingLeft: 12 }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
             ) : (
               <div style={{ textAlign: 'center', padding: 40 }}>
                 <div style={{ fontSize: 40, marginBottom: 12 }}>📊</div>
                 <div style={{ color: textSecondary }}>暂无分类数据</div>
               </div>
             )}
-          </Card>
+          </div>
 
-          <Card
-            title={<span style={{ fontSize: 16, fontWeight: 600, color: textPrimary }}>📈 本周完成趋势</span>}
-            style={{ background: cardBg, border: `1px solid ${borderColor}`, borderRadius: 16, marginTop: 16 }}
-          >
+          <div style={{ marginBottom: 48 }}>
+            <h2 className="section-heading" style={{ marginBottom: 18 }}>本周完成趋势</h2>
             {initialLoading ? (
               <Skeleton active paragraph={{ rows: 4 }} />
             ) : (
-              <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={weekData}>
-                  <XAxis dataKey="day" tick={{ fontSize: 12 }} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Bar dataKey="completed" fill="#10b341" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <div style={{ position: 'relative' }}>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={weekData} barCategoryGap="35%" margin={{ top: 12, right: 8, left: -12, bottom: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--bg-soft)" />
+                    <XAxis dataKey="day" tick={{ fontSize: 12, fill: textSecondary }} axisLine={false} tickLine={false} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: textSecondary }} axisLine={false} tickLine={false} width={28} />
+                    <Tooltip cursor={{ fill: 'var(--bg-soft)' }} />
+                    <Bar
+                      dataKey="completed"
+                      fill="var(--color-primary)"
+                      radius={[6, 6, 0, 0]}
+                      maxBarSize={28}
+                      background={{ fill: 'var(--bg-soft)', radius: 6 }}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+                {!weekData.some((d) => d.completed > 0) && (
+                  <div style={{
+                    position: 'absolute', inset: 0, display: 'flex',
+                    alignItems: 'center', justifyContent: 'center',
+                    color: textSecondary, fontSize: 12, pointerEvents: 'none', opacity: 0.7,
+                  }}>
+                    本周暂无完成事项
+                  </div>
+                )}
+              </div>
             )}
-          </Card>
+          </div>
         </Col>
       </Row>
     </div>
@@ -447,7 +487,7 @@ export default function Dashboard() {
                 renderItem={(member: User) => (
                   <List.Item>
                     <List.Item.Meta
-                      avatar={<Avatar style={{ background: '#0071e3' }}>{member.name?.[0] || '?'}</Avatar>}
+                      avatar={<Avatar style={{ background: '#1F3D2E' }}>{member.name?.[0] || '?'}</Avatar>}
                       title={member.name}
                       description={member.email}
                     />
@@ -503,7 +543,7 @@ export default function Dashboard() {
             style={{
               background: currentView === 'personal'
                 ? (isDark ? '#238636' : '#34c759')
-                : (isDark ? '#1f6feb' : '#0071e3'),
+                : (isDark ? '#5A9170' : '#1F3D2E'),
               color: '#fff',
               border: 'none',
               borderRadius: 20,

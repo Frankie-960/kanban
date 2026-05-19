@@ -1,6 +1,9 @@
 import './utils/env'; // loads .env and validates JWT_SECRET before anything else
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
+import YAML from 'yamljs';
+import swaggerUi from 'swagger-ui-express';
 import { startReminderScheduler } from './services/reminderScheduler';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -100,6 +103,19 @@ app.use('/api/sub-status', subStatusRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/voice', voiceRoutes);
 app.use('/api/projects', projectRoutes);
+
+// OpenAPI spec + Swagger UI (for agent integration)
+const openapiPath = path.join(__dirname, '..', 'openapi.yaml');
+if (fs.existsSync(openapiPath)) {
+  const openapiDoc = YAML.load(openapiPath);
+  app.get('/api/openapi.json', (_req, res) => res.json(openapiDoc));
+  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openapiDoc, {
+    customSiteTitle: '采购看板 API · Swagger',
+    swaggerOptions: { persistAuthorization: true },
+  }));
+} else {
+  console.warn('openapi.yaml not found; /api/docs disabled');
+}
 
 // Health check — probes the database connection
 app.get('/api/health', async (_, res) => {

@@ -49,19 +49,21 @@ function buildItemWhere(
   userDeptId: string | null,
   query: { status?: unknown; priority?: unknown; category?: unknown; search?: unknown; view?: unknown; projectId?: unknown }
 ) {
-  const { status, priority, category, search, projectId } = query;
+  const { status, priority, category, search, projectId, view } = query;
 
-  const visibilityFilter = userDeptId
-    ? {
-        OR: [
-          { userId },
-          {
-            visibility: 'DEPARTMENT' as const,
-            OR: [{ departmentId: userDeptId }, { departmentId: null }],
-          },
-        ],
-      }
-    : { userId };
+  // 个人视图（默认）：严格仅自己；部门视图：自己 + 本部门 DEPARTMENT 可见
+  const visibilityFilter =
+    view === 'department' && userDeptId
+      ? {
+          OR: [
+            { userId },
+            {
+              visibility: 'DEPARTMENT' as const,
+              OR: [{ departmentId: userDeptId }, { departmentId: null }],
+            },
+          ],
+        }
+      : { userId };
 
   const andClauses: object[] = [visibilityFilter];
   if (status) andClauses.push({ status });

@@ -1,13 +1,18 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Table, Button, Tag, Space, Input, Select, DatePicker, Modal, message, Popconfirm } from 'antd';
-import { PlusOutlined, SearchOutlined, CheckCircleOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, SearchOutlined, CheckCircleOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons';
+import * as XLSX from 'xlsx';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../stores/appStore';
 import { itemsAPI } from '../services/api';
 import type { Item, Priority, Category, ItemStatus } from '../types';
-import { CATEGORY_LABELS, PRIORITY_LABELS, STATUS_LABELS, PRIORITY_COLORS, STATUS_COLORS } from '../types';
+import { CATEGORY_LABELS, STATUS_LABELS, PRIORITY_QUADRANT, PRIORITY_LABELS, STATUS_COLORS } from '../types';
 import { getPriorityWeight } from '../utils/priority';
 import { isOverdue } from '../utils/date';
+import { isStale, staleDays } from '../utils/sla';
+import { getMilestone, MILESTONES } from '../utils/milestone';
+import { VisibilityPill } from '../components/VisibilityPill';
+import type { Visibility } from '../types';
 import dayjs from 'dayjs';
 
 const { RangePicker } = DatePicker;
@@ -35,7 +40,7 @@ export default function ItemList() {
   const cardBg = isDark ? '#161b22' : '#ffffff';
   const textPrimary = isDark ? '#e6edf3' : '#1d1d1f';
   const textSecondary = isDark ? '#8b949e' : '#86868b';
-  const accentColor = isDark ? '#58a6ff' : '#0071e3';
+  const accentColor = isDark ? '#5A9170' : '#1F3D2E';
 
   const filteredItems = useMemo(() => items.filter((item) => {
     if (searchText && !item.title.toLowerCase().includes(searchText.toLowerCase())) return false;
@@ -136,6 +141,55 @@ export default function ItemList() {
 
   const rowSelection = { selectedRowKeys, onChange: (keys: React.Key[]) => setSelectedRowKeys(keys) };
 
+  const handleExport = () => {
+    const VIS_LABEL: Record<Visibility, string> = { PRIVATE: '仅自己', DEPARTMENT: '部门可见', SHARED: '全员可见' };
+    const source = selectedRowKeys.length > 0
+      ? filteredItems.filter((i) => selectedRowKeys.includes(i.id))
+      : filteredItems;
+
+    if (source.length === 0) {
+      message.warning('当前没有可导出的事项');
+      return;
+    }
+
+    const rows = source.map((it, idx) => ({
+      '序号': idx + 1,
+      '事项标题': it.title,
+      '状态': STATUS_LABELS[it.status],
+      '子状态': it.subStatus || '',
+      '优先级': PRIORITY_LABELS[it.priority],
+      '象限': PRIORITY_QUADRANT[it.priority].axis,
+      '分类': CATEGORY_LABELS[it.category],
+      '项目': it.project ? (it.project.code ? `${it.project.code} · ${it.project.name}` : it.project.name) : '',
+      '负责人': it.user?.name || '',
+      '可见性': VIS_LABEL[it.visibility],
+      '截止日期': it.dueDate ? dayjs(it.dueDate).format('YYYY-MM-DD HH:mm') : '',
+      '是否逾期': it.dueDate && it.status !== 'COMPLETED' && dayjs(it.dueDate).isBefore(dayjs()) ? '是' : '',
+      '预算金额': it.estimatedAmount ?? '',
+      '实际金额': it.finalAmount ?? '',
+      '币种': it.currency || '',
+      '供应商': it.supplierName || '',
+      '需求部门': it.requesterDepartment || '',
+      '当前进展': it.progress || '',
+      '描述': it.description || '',
+      '创建时间': it.createdAt ? dayjs(it.createdAt).format('YYYY-MM-DD HH:mm') : '',
+      '最后更新': it.updatedAt ? dayjs(it.updatedAt).format('YYYY-MM-DD HH:mm') : '',
+      '完成时间': it.completedAt ? dayjs(it.completedAt).format('YYYY-MM-DD HH:mm') : '',
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const colWidths = [
+      6, 36, 10, 16, 14, 20, 14, 28, 12, 12, 18, 10, 12, 12, 8, 18, 14, 30, 40, 18, 18, 18,
+    ];
+    ws['!cols'] = colWidths.map((w) => ({ wch: w }));
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '事项列表');
+    const filename = `事项列表_${dayjs().format('YYYYMMDD_HHmm')}_${source.length}项.xlsx`;
+    XLSX.writeFile(wb, filename);
+    message.success(`已导出 ${source.length} 项到 ${filename}`);
+  };
+
   const columns = [
     {
       title: '事项',
@@ -143,15 +197,38 @@ export default function ItemList() {
       key: 'title',
       render: (title: string, record: Item) => (
         <div>
-          <a onClick={() => { sessionStorage.setItem('itemDetailFrom', 'list'); navigate(`/items/${record.id}`); }} style={{ fontWeight: 500 }}>{title}</a>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <a onClick={() => { sessionStorage.setItem('itemDetailFrom', 'list'); navigate(`/items/${record.id}`); }} style={{ fontWeight: 500 }}>{title}</a>
+            <VisibilityPill
+              value={record.visibility}
+              compact
+              onChange={async (v: Visibility) => {
+                try {
+                  await itemsAPI.update(record.id, { visibility: v });
+                  message.success(`已改为 ${v === 'PRIVATE' ? '私有' : v === 'DEPARTMENT' ? '部门' : '公开'}`);
+                  fetchItems();
+                } catch { message.error('修改可见性失败'); }
+              }}
+            />
+            {isStale(record) && (
+              <span style={{ fontSize: 11, color: '#92400e', fontWeight: 500 }}>⚠ 呆滞 {staleDays(record)}d</span>
+            )}
+          </div>
           {record.project && (
-            <div style={{ fontSize: 11, color: textSecondary, marginTop: 2 }}>
+            <div style={{ fontSize: 11, color: textSecondary, marginTop: 4 }}>
               <Tag color="purple" style={{ fontSize: 10, borderRadius: 4, padding: '0 6px', lineHeight: '16px', cursor: 'pointer' }}
                 onClick={(e) => { e.stopPropagation(); navigate(`/projects/${record.projectId}`); }}>
                 📁 {record.project.code ? `${record.project.code} · ` : ''}{record.project.name}
               </Tag>
             </div>
           )}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 2, marginTop: 6, maxWidth: 140 }} title={`阶段：${MILESTONES[getMilestone(record)]}`}>
+            {MILESTONES.map((_, i) => {
+              const idx = getMilestone(record);
+              const cls = i < idx ? 'past' : i === idx ? 'current' : 'future';
+              return <span key={i} className={`milestone-seg ${cls}`} />;
+            })}
+          </div>
         </div>
       ),
     },
@@ -175,10 +252,11 @@ export default function ItemList() {
       title: '优先级',
       dataIndex: 'priority',
       key: 'priority',
-      width: 80,
-      render: (priority: Priority) => (
-        <Tag color={PRIORITY_COLORS[priority]} style={{ borderRadius: 6 }}>{PRIORITY_LABELS[priority]}</Tag>
-      ),
+      width: 110,
+      render: (priority: Priority) => {
+        const { quadrant, label } = PRIORITY_QUADRANT[priority];
+        return <span className={`priority-pill q-${quadrant}`}>{label}</span>;
+      },
     },
     {
       title: '分类',
@@ -204,7 +282,7 @@ export default function ItemList() {
       key: 'action',
       width: 200,
       render: (_: any, record: Item) => (
-        <Space>
+        <Space className="row-actions">
           {record.status === 'TODO' && <Button size="small" type="primary" onClick={() => handleStatusChange(record, 'IN_PROGRESS')} style={{ borderRadius: 6 }}>开始</Button>}
           {record.status === 'IN_PROGRESS' && <Button size="small" type="primary" onClick={() => handleStatusChange(record, 'COMPLETED')} style={{ borderRadius: 6 }}>完成</Button>}
           <Button size="small" danger onClick={() => handleDelete(record)} style={{ borderRadius: 6 }}>删除</Button>
@@ -215,17 +293,26 @@ export default function ItemList() {
 
   return (
     <div>
-      <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2 style={{ margin: 0, fontSize: 22, fontWeight: 600, color: textPrimary }}>列表视图</h2>
-        <Button type="primary" icon={<PlusOutlined />} style={{ borderRadius: 10, fontWeight: 500 }} onClick={() => { sessionStorage.setItem('itemDetailFrom', 'list'); navigate('/items/new'); }}>
-          新建事项
-        </Button>
+      <div style={{ marginBottom: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <div>
+          <h1 className="page-heading">事项列表</h1>
+          <p className="page-subhead">{filteredItems.length} 项 · 共 {items.length} 项</p>
+        </div>
+        <Space size={12}>
+          <Button icon={<DownloadOutlined />} size="large" style={{ borderRadius: 10 }} onClick={handleExport}>
+            导出 Excel
+          </Button>
+          <Button type="primary" icon={<PlusOutlined />} size="large" style={{ borderRadius: 10, fontWeight: 500 }} onClick={() => { sessionStorage.setItem('itemDetailFrom', 'list'); navigate('/items/new'); }}>
+            新建事项
+          </Button>
+        </Space>
       </div>
 
       {selectedRowKeys.length > 0 && (
         <div style={{ marginBottom: 16, padding: '12px 16px', background: cardBg, border: `1px solid ${accentColor}40`, borderRadius: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ color: textPrimary, fontWeight: 500 }}>已选择 {selectedRowKeys.length} 项</span>
           <Space>
+            <Button size="small" icon={<DownloadOutlined />} onClick={handleExport} style={{ borderRadius: 6 }}>导出选中</Button>
             <Button size="small" icon={<CheckCircleOutlined />} onClick={handleBatchComplete} style={{ borderRadius: 6 }}>批量完成</Button>
             <Button size="small" onClick={handleBatchAssignProject} style={{ borderRadius: 6 }}>分配项目</Button>
             <Popconfirm title="确定要删除选中的事项吗？" onConfirm={handleBatchDelete} okText="确定" cancelText="取消">

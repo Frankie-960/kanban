@@ -12,6 +12,20 @@ import { sendEmail, buildPasswordResetEmail } from '../services/emailService';
 
 const router = Router();
 
+// Mask an API key like "sk-63779ed9...fd40" → "sk-***fd40" before sending to clients.
+// /auth/me is reachable by long-lived agent tokens; returning plaintext would leak the
+// user's LLM key to anyone holding the token. The mask is recognizable so updateProfile
+// can ignore it and avoid overwriting the real stored value.
+const API_KEY_MASK_PREFIX = 'sk-***';
+function maskApiKey(plain: string | null): string | null {
+  if (!plain) return plain;
+  const tail = plain.length >= 4 ? plain.slice(-4) : '';
+  return `${API_KEY_MASK_PREFIX}${tail}`;
+}
+function isMaskedApiKey(v: string | null | undefined): boolean {
+  return typeof v === 'string' && v.startsWith(API_KEY_MASK_PREFIX);
+}
+
 const registerSchema = z.object({
   name: z.string().min(1),
   email: z.string().email(),
@@ -125,7 +139,7 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res) => {
       role: user.role,
       departmentId: user.departmentId,
       department: user.department,
-      deepseekApiKey: decryptApiKey(user.deepseekApiKey),
+      deepseekApiKey: maskApiKey(decryptApiKey(user.deepseekApiKey)),
       llmProvider: user.llmProvider,
       mustChangePassword: user.mustChangePassword,
     });
@@ -153,7 +167,7 @@ router.put('/profile', authMiddleware, async (req: AuthRequest, res) => {
       updateData.mustChangePassword = false;
     }
 
-    if (data.deepseekApiKey !== undefined) {
+    if (data.deepseekApiKey !== undefined && !isMaskedApiKey(data.deepseekApiKey)) {
       updateData.deepseekApiKey = data.deepseekApiKey ? encryptApiKey(data.deepseekApiKey) : null;
     }
     if (data.llmProvider !== undefined) {
@@ -291,6 +305,26 @@ router.post('/reset-password', async (req, res) => {
     res.json({ message: 'Password has been reset successfully.' });
   } catch {
     res.status(500).json({ error: 'Failed to reset password' });
+  }
+});
+
+// Issue a long-lived agent token (for MCP / programmatic agents)
+router.post('/agent-token', authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const { name = 'agent', scope = 'rw', days = 365 } = req.body || {};
+    if (!['ro', 'rw'].includes(scope)) {
+      return res.status(400).json({ error: 'Invalid scope (use "ro" or "rw")' });
+    }
+    const ttlDays = Math.min(Math.max(parseInt(String(days), 10) || 365, 1), 365);
+    const token = jwt.sign(
+      { userId: req.userId, agent: true, scope, agentName: String(name).slice(0, 64) },
+      jwtSecret,
+      { expiresIn: `${ttlDays}d` }
+    );
+    res.json({ token, expiresInDays: ttlDays, scope, agentName: String(name).slice(0, 64) });
+  } catch (e) {
+    console.error('POST /auth/agent-token failed:', e);
+    res.status(500).json({ error: 'Failed to issue agent token' });
   }
 });
 

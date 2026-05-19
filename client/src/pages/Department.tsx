@@ -308,7 +308,7 @@ export default function Department() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <FileTextOutlined style={{ color: '#0071e3' }} />
+              <FileTextOutlined style={{ color: '#1F3D2E' }} />
               <span style={{ fontWeight: 600, fontSize: 15 }}>{ann.title}</span>
               {ann.isWithdrawn && <Tag color="default" style={{ borderRadius: 4 }}>已撤回</Tag>}
               {ann.isExpired && <Tag color="orange" style={{ borderRadius: 4 }}>已过期</Tag>}
@@ -424,7 +424,7 @@ export default function Department() {
               renderItem={(dept) => (
                 <List.Item style={{ cursor: 'pointer', padding: '12px 0' }} onClick={() => loadDepartmentDetails(dept)}>
                   <List.Item.Meta
-                    avatar={<Avatar icon={<TeamOutlined />} style={{ background: selectedDepartment?.id === dept.id ? '#34c759' : '#0071e3' }} />}
+                    avatar={<Avatar icon={<TeamOutlined />} style={{ background: selectedDepartment?.id === dept.id ? '#34c759' : '#1F3D2E' }} />}
                     title={<span style={{ fontWeight: 500 }}>{dept.name}</span>}
                     description={<span style={{ color: theme.textSecondary, fontSize: 13 }}>{dept.description || '暂无描述'}</span>}
                   />
