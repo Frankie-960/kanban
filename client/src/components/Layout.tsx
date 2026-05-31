@@ -108,7 +108,7 @@ export default function Layout() {
   };
 
   return (
-    <AntLayout style={{ minHeight: '100vh', background: bgColor }}>
+    <AntLayout style={{ flex: 1, minHeight: 0, overflow: 'hidden', background: bgColor }}>
       <Sider
         collapsible
         collapsed={collapsed}
@@ -167,7 +167,7 @@ export default function Layout() {
           }}
         />
       </Sider>
-      <AntLayout style={{ background: bgColor, height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <AntLayout style={{ background: bgColor, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <Header
           style={{
             background: headerBg,
@@ -236,7 +236,7 @@ export default function Layout() {
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
-            overflow: 'hidden',
+            overflow: 'auto',
           }}
         >
           {user && user.emailVerified === false ? (

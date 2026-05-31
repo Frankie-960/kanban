@@ -101219,7 +101219,12 @@ function Dashboard() {
   const todoItems = reactExports.useMemo(() => displayItems.filter((i) => i.status === "TODO"), [displayItems]);
   const inProgressItems = reactExports.useMemo(() => displayItems.filter((i) => i.status === "IN_PROGRESS"), [displayItems]);
   const completedItems = reactExports.useMemo(() => displayItems.filter((i) => i.status === "COMPLETED"), [displayItems]);
-  const overdueItems = reactExports.useMemo(() => displayItems.filter(isOverdue), [displayItems]);
+  const overdueItems = reactExports.useMemo(() => displayItems.filter(
+    (i) => isOverdue(i) && !!i.dueDate && dayjs(i.dueDate).isSame(dayjs(), "month")
+  ), [displayItems]);
+  const thisWeekCompleted = reactExports.useMemo(() => completedItems.filter(
+    (i) => i.completedAt && dayjs(i.completedAt).isAfter(dayjs().subtract(7, "day"))
+  ), [completedItems]);
   const filteredListItems = taskFilter === "ALL" ? displayItems.filter((i) => i.status !== "COMPLETED") : displayItems.filter((i) => i.status === taskFilter);
   const completionRate = reactExports.useMemo(() => displayItems.length > 0 ? Math.round(completedItems.length / displayItems.length * 100) : 0, [displayItems, completedItems]);
   const categoryData = reactExports.useMemo(() => [
@@ -101240,7 +101245,6 @@ function Dashboard() {
   }, [completedItems]);
   const isManager = (user == null ? void 0 : user.role) === "ADMIN" || (user == null ? void 0 : user.role) === "DEPARTMENT_ADMIN";
   const isDark = localStorage.getItem("darkMode") === "true";
-  const cardBg = isDark ? "#161b22" : "#ffffff";
   const textPrimary = isDark ? "#e6edf3" : "#1d1d1f";
   const textSecondary = isDark ? "#8b949e" : "#86868b";
   const borderColor = isDark ? "#30363d" : "#d2d2d7";
@@ -101260,7 +101264,7 @@ function Dashboard() {
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "page-subhead", children: [
           dayjs().format("YYYY 年 MM 月 DD 日"),
-          " · 本周完成率 ",
+          " · 总完成率 ",
           completionRate,
           "%"
         ] })
@@ -101310,7 +101314,7 @@ function Dashboard() {
           children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "section-title", children: "本周完成" }),
             /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", alignItems: "baseline", gap: 14 }, children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { fontSize: 72, fontWeight: 700, letterSpacing: "-0.04em", color: "var(--ink)", lineHeight: 1 }, children: completedItems.length }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { fontSize: 72, fontWeight: 700, letterSpacing: "-0.04em", color: "var(--ink)", lineHeight: 1 }, children: thisWeekCompleted.length }),
               /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { fontSize: 16, color: "var(--text-secondary)" }, children: "事项" })
             ] }),
             /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
@@ -101525,166 +101529,181 @@ function Dashboard() {
   ] });
   const renderDepartmentDashboard = () => {
     const currentDept = departments.find((d2) => d2.id === (user == null ? void 0 : user.departmentId));
+    const activeItems = displayItems.filter((i) => i.status !== "COMPLETED");
+    const urgentItems = displayItems.filter((i) => i.priority === "URGENT" && i.status !== "COMPLETED");
     return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { marginBottom: 32, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }, children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { marginBottom: 48, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 16 }, children: [
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("h2", { style: { margin: 0, fontSize: 28, fontWeight: 600, color: textPrimary, letterSpacing: -0.5 }, children: [
-            "🏢 ",
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("h1", { className: "page-heading", children: [
             (currentDept == null ? void 0 : currentDept.name) || "采购部",
-            " 工作概览"
+            "概览"
           ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { style: { color: textSecondary, margin: "8px 0 0", fontSize: 14 }, children: [
-            dayjs().format("YYYY年MM月DD日"),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "page-subhead", children: [
+            dayjs().format("YYYY 年 MM 月 DD 日"),
             " · 部门成员 ",
             departmentMembers.length,
             " 人"
           ] })
         ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx(
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Space, { size: 12, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
           Button$1,
           {
             type: "primary",
             icon: /* @__PURE__ */ jsxRuntimeExports.jsx(RefIcon$R, {}),
             size: "large",
-            style: { borderRadius: 10 },
+            style: { borderRadius: 10, fontWeight: 500 },
             onClick: () => {
               sessionStorage.setItem("itemDetailFrom", "dashboard");
               navigate("/items/new");
             },
             children: "新建事项"
           }
-        )
+        ) })
       ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(Row, { gutter: [16, 16], children: [
-        { title: "部门待办", value: todoItems.length, color: "#ff9f43" },
-        { title: "部门进行中", value: inProgressItems.length, color: "#0abde3" },
-        { title: "部门已完成", value: completedItems.length, color: "#10b341" },
-        { title: "部门完成率", value: displayItems.length > 0 ? Math.round(completedItems.length / displayItems.length * 100) : 0, suffix: "%", color: "#10b341" }
-      ].map((stat, index2) => /* @__PURE__ */ jsxRuntimeExports.jsx(Col, { xs: 12, sm: 6, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Card, { style: { background: cardBg, border: `1px solid ${borderColor}`, borderRadius: 16 }, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-        Statistic,
-        {
-          title: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { fontSize: 13, color: textSecondary }, children: stat.title }),
-          value: stat.value,
-          suffix: stat.suffix,
-          valueStyle: { color: stat.color, fontSize: 28, fontWeight: 600 }
-        }
-      ) }) }, index2)) }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs(Row, { gutter: [16, 16], style: { marginTop: 24 }, children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx(Col, { xs: 24, lg: 14, children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
-          Card,
-          {
-            title: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { fontSize: 16, fontWeight: 600, color: textPrimary }, children: "📋 部门任务进度" }),
-            style: { background: cardBg, border: `1px solid ${borderColor}`, borderRadius: 16 },
-            children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx(
-                ForwardTable,
-                {
-                  dataSource: displayItems.slice(0, 8),
-                  rowKey: "id",
-                  size: "small",
-                  pagination: false,
-                  style: { borderRadius: 12 },
-                  columns: [
-                    {
-                      title: "任务",
-                      dataIndex: "title",
-                      key: "title",
-                      render: (title, record) => /* @__PURE__ */ jsxRuntimeExports.jsx("a", { onClick: () => navigate(`/items/${record.id}`), style: { fontWeight: 500 }, children: title })
-                    },
-                    {
-                      title: "负责人",
-                      dataIndex: ["user", "name"],
-                      key: "user",
-                      render: (name) => name || "-"
-                    },
-                    {
-                      title: "状态",
-                      dataIndex: "status",
-                      key: "status",
-                      render: (status) => /* @__PURE__ */ jsxRuntimeExports.jsx(Tag, { color: STATUS_COLORS[status], style: { borderRadius: 6 }, children: STATUS_LABELS[status] })
-                    },
-                    {
-                      title: "截止日期",
-                      dataIndex: "dueDate",
-                      key: "dueDate",
-                      render: (date4) => date4 ? /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { color: isOverdue({ dueDate: date4, status: "" }) ? "#ff5252" : textSecondary }, children: dayjs(date4).format("MM/DD") }) : "-"
-                    }
-                  ]
-                }
-              ),
-              displayItems.length > 8 && /* @__PURE__ */ jsxRuntimeExports.jsxs(Button$1, { type: "link", onClick: () => navigate("/department"), style: { padding: 0, marginTop: 8 }, children: [
-                "查看全部 (",
+      /* @__PURE__ */ jsxRuntimeExports.jsx(Row, { gutter: [24, 24], style: { marginBottom: 56 }, children: initialLoading ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Col, { xs: 24, lg: 12, children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "surface", style: { minHeight: 200 }, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Skeleton, { active: true, paragraph: { rows: 2 } }) }) }),
+        [1, 2, 3].map((i) => /* @__PURE__ */ jsxRuntimeExports.jsx(Col, { xs: 8, lg: 4, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Skeleton, { active: true, paragraph: { rows: 1 } }) }, i))
+      ] }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Col, { xs: 24, lg: 12, children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "surface", style: { padding: "32px 36px", minHeight: 200, display: "flex", flexDirection: "column", justifyContent: "space-between" }, children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "section-title", children: "团队完成率" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", alignItems: "baseline", gap: 14 }, children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { fontSize: 72, fontWeight: 700, letterSpacing: "-0.04em", color: "var(--ink)", lineHeight: 1 }, children: completionRate }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { fontSize: 16, color: "var(--text-secondary)" }, children: "%" })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--text-secondary)", marginBottom: 6 }, children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+                "已完成 ",
+                completedItems.length,
+                " / 共 ",
                 displayItems.length,
-                ")"
+                " 事项"
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { style: { color: "var(--color-primary)", fontWeight: 600 }, children: [
+                completionRate,
+                "%"
               ] })
-            ]
-          }
-        ) }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs(Col, { xs: 24, lg: 10, children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx(
-            Card,
-            {
-              title: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { fontSize: 16, fontWeight: 600, color: textPrimary }, children: "👥 部门成员" }),
-              style: { background: cardBg, border: `1px solid ${borderColor}`, borderRadius: 16 },
-              children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-                List,
-                {
-                  dataSource: departmentMembers,
-                  renderItem: (member) => {
-                    var _a;
-                    return /* @__PURE__ */ jsxRuntimeExports.jsxs(List.Item, { children: [
-                      /* @__PURE__ */ jsxRuntimeExports.jsx(
-                        List.Item.Meta,
-                        {
-                          avatar: /* @__PURE__ */ jsxRuntimeExports.jsx(Avatar, { style: { background: "#1677FF" }, children: ((_a = member.name) == null ? void 0 : _a[0]) || "?" }),
-                          title: member.name,
-                          description: member.email
-                        }
-                      ),
-                      /* @__PURE__ */ jsxRuntimeExports.jsx(
-                        Tag,
-                        {
-                          color: member.role === "ADMIN" ? "red" : member.role === "DEPARTMENT_ADMIN" ? "orange" : "default",
-                          style: { borderRadius: 6 },
-                          children: member.role === "ADMIN" ? "管理员" : member.role === "DEPARTMENT_ADMIN" ? "部门负责人" : "成员"
-                        }
-                      )
-                    ] });
-                  }
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { height: 4, background: "var(--bg-softer)", borderRadius: 2, overflow: "hidden" }, children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { width: `${completionRate}%`, height: "100%", background: "var(--color-primary)", borderRadius: 2, transition: "width 0.4s ease" } }) })
+          ] })
+        ] }) }),
+        [
+          { label: "待办", value: todoItems.length, accent: "#ff9f43" },
+          { label: "进行中", value: inProgressItems.length, accent: "var(--color-primary)" },
+          { label: "已逾期", value: overdueItems.length, accent: "#ff5252" }
+        ].map((s2) => /* @__PURE__ */ jsxRuntimeExports.jsx(Col, { xs: 8, lg: 4, children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { padding: "12px 4px" }, children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "section-title", style: { marginBottom: 10 }, children: s2.label }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { fontSize: 44, fontWeight: 700, color: "var(--ink)", letterSpacing: "-0.03em", lineHeight: 1 }, children: s2.value }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { width: 28, height: 2, background: s2.accent, marginTop: 14 } })
+        ] }) }, s2.label))
+      ] }) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs(Row, { gutter: [40, 48], children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Col, { xs: 24, lg: 16, children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { marginBottom: 48 }, children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "section-heading", style: { marginBottom: 18 }, children: "团队任务" }),
+          initialLoading ? /* @__PURE__ */ jsxRuntimeExports.jsx(Skeleton, { active: true, paragraph: { rows: 4 } }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              List,
+              {
+                size: "small",
+                dataSource: activeItems.slice(0, 8),
+                renderItem: (item) => {
+                  var _a;
+                  return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                    List.Item,
+                    {
+                      style: { cursor: "pointer", borderRadius: 12, marginBottom: 8, padding: "12px 16px", border: `1px solid ${borderColor}` },
+                      onClick: () => navigate(`/items/${item.id}`),
+                      children: [
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          List.Item.Meta,
+                          {
+                            title: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { fontWeight: 500, color: textPrimary }, children: item.title }),
+                            description: /* @__PURE__ */ jsxRuntimeExports.jsxs(Space, { size: 4, children: [
+                              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { fontSize: 12, color: textSecondary }, children: ((_a = item.user) == null ? void 0 : _a.name) || "未分配" }),
+                              item.dueDate && /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { style: { color: isOverdue(item) ? "#ff5252" : textSecondary, fontSize: 12 }, children: [
+                                "· ",
+                                isOverdue(item) ? "已逾期" : "截止:",
+                                " ",
+                                dayjs(item.dueDate).format("MM/DD")
+                              ] })
+                            ] })
+                          }
+                        ),
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(Tag, { color: STATUS_COLORS[item.status], style: { borderRadius: 6 }, children: STATUS_LABELS[item.status] })
+                      ]
+                    }
+                  );
+                },
+                locale: {
+                  emptyText: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { textAlign: "center", padding: 40 }, children: [
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { fontSize: 40, marginBottom: 12 }, children: "🎉" }),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { color: textSecondary }, children: "暂无进行中任务" })
+                  ] })
                 }
-              )
-            }
-          ),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(
-            Card,
-            {
-              title: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { fontSize: 16, fontWeight: 600, color: "#ff5252" }, children: "🚨 紧急事项" }),
-              style: { background: cardBg, border: `1px solid #ff525230`, borderRadius: 16, marginTop: 16 },
-              children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-                List,
-                {
-                  size: "small",
-                  dataSource: displayItems.filter((i) => i.priority === "URGENT" && i.status !== "COMPLETED").slice(0, 5),
-                  renderItem: (item) => /* @__PURE__ */ jsxRuntimeExports.jsxs(List.Item, { children: [
+              }
+            ),
+            activeItems.length > 8 && /* @__PURE__ */ jsxRuntimeExports.jsxs(Button$1, { type: "link", onClick: () => navigate("/department"), style: { padding: 0, marginTop: 12 }, children: [
+              "查看全部 (",
+              activeItems.length,
+              ")"
+            ] })
+          ] })
+        ] }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs(Col, { xs: 24, lg: 8, children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { marginBottom: 48 }, children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "section-heading", style: { marginBottom: 18 }, children: "部门成员" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              List,
+              {
+                dataSource: departmentMembers,
+                renderItem: (member) => {
+                  var _a;
+                  return /* @__PURE__ */ jsxRuntimeExports.jsxs(List.Item, { style: { borderBottom: "1px solid var(--bg-soft)" }, children: [
                     /* @__PURE__ */ jsxRuntimeExports.jsx(
                       List.Item.Meta,
                       {
-                        title: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { color: "#ff5252", fontWeight: 500 }, children: item.title }),
-                        description: `截止: ${dayjs(item.dueDate).format("MM/DD HH:mm")}`
+                        avatar: /* @__PURE__ */ jsxRuntimeExports.jsx(Avatar, { style: { background: "var(--color-primary)", color: "#fff" }, children: ((_a = member.name) == null ? void 0 : _a[0]) || "?" }),
+                        title: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { fontWeight: 500, color: textPrimary }, children: member.name }),
+                        description: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { fontSize: 12, color: textSecondary }, children: member.email })
                       }
                     ),
-                    /* @__PURE__ */ jsxRuntimeExports.jsx(Tag, { color: "red", style: { borderRadius: 6 }, children: "紧急" })
-                  ] }),
-                  locale: {
-                    emptyText: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { textAlign: "center", padding: 24 }, children: [
-                      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { fontSize: 32, marginBottom: 8 }, children: "✅" }),
-                      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { color: textSecondary }, children: "暂无紧急事项" })
-                    ] })
-                  }
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(Tag, { style: {
+                      borderRadius: 6,
+                      background: member.role === "ADMIN" ? "#fef2f2" : member.role === "DEPARTMENT_ADMIN" ? "#fef6e7" : "var(--pill-gray-bg)",
+                      color: member.role === "ADMIN" ? "#b91c1c" : member.role === "DEPARTMENT_ADMIN" ? "#92400e" : "var(--pill-gray-fg)"
+                    }, children: member.role === "ADMIN" ? "管理员" : member.role === "DEPARTMENT_ADMIN" ? "部门负责人" : "成员" })
+                  ] });
                 }
-              )
-            }
-          )
+              }
+            )
+          ] }),
+          urgentItems.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "section-heading", style: { marginBottom: 18, color: "#ff5252" }, children: "紧急事项" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              List,
+              {
+                size: "small",
+                dataSource: urgentItems.slice(0, 5),
+                renderItem: (item) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                  List.Item,
+                  {
+                    style: { cursor: "pointer", borderBottom: "1px solid var(--bg-soft)" },
+                    onClick: () => navigate(`/items/${item.id}`),
+                    children: [
+                      /* @__PURE__ */ jsxRuntimeExports.jsx(
+                        List.Item.Meta,
+                        {
+                          title: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { color: "#ff5252", fontWeight: 500 }, children: item.title }),
+                          description: item.dueDate ? `截止: ${dayjs(item.dueDate).format("MM/DD HH:mm")}` : "无截止日期"
+                        }
+                      ),
+                      /* @__PURE__ */ jsxRuntimeExports.jsx(Tag, { color: "red", style: { borderRadius: 6 }, children: "紧急" })
+                    ]
+                  }
+                )
+              }
+            )
+          ] })
         ] })
       ] })
     ] });
@@ -130644,7 +130663,7 @@ function Layout() {
       setDarkMode(!darkMode);
     }
   };
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs(Layout$1, { style: { minHeight: "100vh", background: bgColor }, children: [
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(Layout$1, { style: { flex: 1, minHeight: 0, overflow: "hidden", background: bgColor }, children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs(
       Sider,
       {
@@ -130717,7 +130736,7 @@ function Layout() {
         ]
       }
     ),
-    /* @__PURE__ */ jsxRuntimeExports.jsxs(Layout$1, { style: { background: bgColor, height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden" }, children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs(Layout$1, { style: { background: bgColor, flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }, children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs(
         Header,
         {
@@ -130802,7 +130821,7 @@ function Layout() {
             flex: 1,
             display: "flex",
             flexDirection: "column",
-            overflow: "hidden"
+            overflow: "auto"
           },
           children: user && user.emailVerified === false ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: {
             flex: 1,

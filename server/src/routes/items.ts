@@ -154,8 +154,9 @@ router.get('/summary', async (req: AuthRequest, res) => {
       overdueCount,
       overBudgetItems,
       monthlyTotals,
-      monthlyByStatus,
-      monthlyOverdueCount,
+      completedThisMonthCount,
+      allUnfinishedCount,
+      overdueThisMonthCount,
       monthlySavedRows,
     ] = await Promise.all([
       prisma.item.aggregate({
@@ -186,13 +187,17 @@ router.get('/summary', async (req: AuthRequest, res) => {
         _count: { id: true },
         _sum: { estimatedAmount: true, finalAmount: true },
       }),
-      prisma.item.groupBy({
-        by: ['status'],
-        where: monthWhere,
-        _count: { id: true },
-      }),
+      // 本月已完成：completedAt 在本月内（不限创建时间）
       prisma.item.count({
-        where: { AND: [...(monthWhere.AND as object[]), { status: { not: 'COMPLETED' }, dueDate: { lt: now, not: null } }] },
+        where: { AND: [...(where.AND as object[]), { completedAt: { gte: monthStart, lte: monthEnd } }] },
+      }),
+      // 进行中：所有待办+进行中事项（不限月份）
+      prisma.item.count({
+        where: { AND: [...(where.AND as object[]), { status: { in: ['TODO', 'IN_PROGRESS'] } }] },
+      }),
+      // 已逾期：dueDate 在本月且已过期且未完成
+      prisma.item.count({
+        where: { AND: [...(where.AND as object[]), { dueDate: { gte: monthStart, lte: monthEnd, lt: now } }, { status: { not: 'COMPLETED' } }] },
       }),
       prisma.item.findMany({
         where: {
@@ -215,8 +220,6 @@ router.get('/summary', async (req: AuthRequest, res) => {
 
     const monthlyEst = monthlyTotals._sum.estimatedAmount ?? 0;
     const monthlyFinal = monthlyTotals._sum.finalAmount ?? 0;
-    const monthlyCompletedCount = monthlyByStatus.find((s) => s.status === 'COMPLETED')?._count.id ?? 0;
-    const monthlyInProgressCount = monthlyByStatus.find((s) => s.status === 'IN_PROGRESS')?._count.id ?? 0;
     const monthlySavedAmount = monthlySavedRows.reduce((sum, i) => {
       if (i.estimatedAmount! > i.finalAmount!) return sum + (i.estimatedAmount! - i.finalAmount!);
       return sum;
@@ -237,9 +240,9 @@ router.get('/summary', async (req: AuthRequest, res) => {
       overBudgetItems: overBudgetFiltered,
       monthly: {
         count: monthlyTotals._count.id,
-        completedCount: monthlyCompletedCount,
-        inProgressCount: monthlyInProgressCount,
-        overdueCount: monthlyOverdueCount,
+        completedCount: completedThisMonthCount,
+        inProgressCount: allUnfinishedCount,
+        overdueCount: overdueThisMonthCount,
         estimatedAmount: monthlyEst,
         finalAmount: monthlyFinal,
         savedAmount: monthlySavedAmount,

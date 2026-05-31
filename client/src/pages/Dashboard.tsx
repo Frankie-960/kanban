@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Card, Row, Col, Statistic, List, Tag, Button, Table, Avatar, Space, Radio, Skeleton } from 'antd';
+import { Row, Col, List, Tag, Button, Avatar, Space, Radio, Skeleton } from 'antd';
 import { PlusOutlined, FileTextOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, Label, CartesianGrid } from 'recharts';
@@ -39,7 +39,14 @@ export default function Dashboard() {
   const todoItems = useMemo(() => displayItems.filter((i) => i.status === 'TODO'), [displayItems]);
   const inProgressItems = useMemo(() => displayItems.filter((i) => i.status === 'IN_PROGRESS'), [displayItems]);
   const completedItems = useMemo(() => displayItems.filter((i) => i.status === 'COMPLETED'), [displayItems]);
-  const overdueItems = useMemo(() => displayItems.filter(isOverdue), [displayItems]);
+  // 已逾期：dueDate 在本月且已过期且未完成
+  const overdueItems = useMemo(() => displayItems.filter(
+    (i) => isOverdue(i) && !!i.dueDate && dayjs(i.dueDate).isSame(dayjs(), 'month')
+  ), [displayItems]);
+  // 本周完成：completedAt 在近 7 天内
+  const thisWeekCompleted = useMemo(() => completedItems.filter(
+    (i) => i.completedAt && dayjs(i.completedAt).isAfter(dayjs().subtract(7, 'day'))
+  ), [completedItems]);
 
   const filteredListItems = taskFilter === 'ALL'
     ? displayItems.filter((i) => i.status !== 'COMPLETED')
@@ -70,7 +77,6 @@ export default function Dashboard() {
   const isManager = user?.role === 'ADMIN' || user?.role === 'DEPARTMENT_ADMIN';
   const isDark = localStorage.getItem('darkMode') === 'true';
 
-  const cardBg = isDark ? '#161b22' : '#ffffff';
   const textPrimary = isDark ? '#e6edf3' : '#1d1d1f';
   const textSecondary = isDark ? '#8b949e' : '#86868b';
   const borderColor = isDark ? '#30363d' : '#d2d2d7';
@@ -90,7 +96,7 @@ export default function Dashboard() {
             {getGreeting()}，{user?.name}
           </h1>
           <p className="page-subhead">
-            {dayjs().format('YYYY 年 MM 月 DD 日')} · 本周完成率 {completionRate}%
+            {dayjs().format('YYYY 年 MM 月 DD 日')} · 总完成率 {completionRate}%
           </p>
         </div>
         <Space size={12}>
@@ -144,7 +150,7 @@ export default function Dashboard() {
                 <div className="section-title">本周完成</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 14 }}>
                   <span style={{ fontSize: 72, fontWeight: 700, letterSpacing: '-0.04em', color: 'var(--ink)', lineHeight: 1 }}>
-                    {completedItems.length}
+                    {thisWeekCompleted.length}
                   </span>
                   <span style={{ fontSize: 16, color: 'var(--text-secondary)' }}>事项</span>
                 </div>
@@ -377,157 +383,182 @@ export default function Dashboard() {
 
   const renderDepartmentDashboard = () => {
     const currentDept = departments.find(d => d.id === user?.departmentId);
+    const activeItems = displayItems.filter((i: any) => i.status !== 'COMPLETED');
+    const urgentItems = displayItems.filter((i: any) => i.priority === 'URGENT' && i.status !== 'COMPLETED');
 
     return (
       <div>
-        <div style={{ marginBottom: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+        <div style={{ marginBottom: 48, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 16 }}>
           <div>
-            <h2 style={{ margin: 0, fontSize: 28, fontWeight: 600, color: textPrimary, letterSpacing: -0.5 }}>
-              🏢 {currentDept?.name || '采购部'} 工作概览
-            </h2>
-            <p style={{ color: textSecondary, margin: '8px 0 0', fontSize: 14 }}>
-              {dayjs().format('YYYY年MM月DD日')} · 部门成员 {departmentMembers.length} 人
+            <h1 className="page-heading">{currentDept?.name || '采购部'}概览</h1>
+            <p className="page-subhead">
+              {dayjs().format('YYYY 年 MM 月 DD 日')} · 部门成员 {departmentMembers.length} 人
             </p>
           </div>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            size="large"
-            style={{ borderRadius: 10 }}
-            onClick={() => { sessionStorage.setItem('itemDetailFrom', 'dashboard'); navigate('/items/new'); }}
-          >
-            新建事项
-          </Button>
+          <Space size={12}>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              size="large"
+              style={{ borderRadius: 10, fontWeight: 500 }}
+              onClick={() => { sessionStorage.setItem('itemDetailFrom', 'dashboard'); navigate('/items/new'); }}
+            >
+              新建事项
+            </Button>
+          </Space>
         </div>
 
-        <Row gutter={[16, 16]}>
-          {[
-            { title: '部门待办', value: todoItems.length, color: '#ff9f43' },
-            { title: '部门进行中', value: inProgressItems.length, color: '#0abde3' },
-            { title: '部门已完成', value: completedItems.length, color: '#10b341' },
-            { title: '部门完成率', value: displayItems.length > 0 ? Math.round((completedItems.length / displayItems.length) * 100) : 0, suffix: '%', color: '#10b341' },
-          ].map((stat, index) => (
-            <Col xs={12} sm={6} key={index}>
-              <Card style={{ background: cardBg, border: `1px solid ${borderColor}`, borderRadius: 16 }}>
-                <Statistic
-                  title={<span style={{ fontSize: 13, color: textSecondary }}>{stat.title}</span>}
-                  value={stat.value}
-                  suffix={stat.suffix}
-                  valueStyle={{ color: stat.color, fontSize: 28, fontWeight: 600 }}
-                />
-              </Card>
-            </Col>
-          ))}
+        <Row gutter={[24, 24]} style={{ marginBottom: 56 }}>
+          {initialLoading ? (
+            <>
+              <Col xs={24} lg={12}>
+                <div className="surface" style={{ minHeight: 200 }}>
+                  <Skeleton active paragraph={{ rows: 2 }} />
+                </div>
+              </Col>
+              {[1, 2, 3].map((i) => (
+                <Col xs={8} lg={4} key={i}>
+                  <Skeleton active paragraph={{ rows: 1 }} />
+                </Col>
+              ))}
+            </>
+          ) : (
+            <>
+              <Col xs={24} lg={12}>
+                <div className="surface" style={{ padding: '32px 36px', minHeight: 200, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div className="section-title">团队完成率</div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 14 }}>
+                    <span style={{ fontSize: 72, fontWeight: 700, letterSpacing: '-0.04em', color: 'var(--ink)', lineHeight: 1 }}>
+                      {completionRate}
+                    </span>
+                    <span style={{ fontSize: 16, color: 'var(--text-secondary)' }}>%</span>
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text-secondary)', marginBottom: 6 }}>
+                      <span>已完成 {completedItems.length} / 共 {displayItems.length} 事项</span>
+                      <span style={{ color: 'var(--color-primary)', fontWeight: 600 }}>{completionRate}%</span>
+                    </div>
+                    <div style={{ height: 4, background: 'var(--bg-softer)', borderRadius: 2, overflow: 'hidden' }}>
+                      <div style={{ width: `${completionRate}%`, height: '100%', background: 'var(--color-primary)', borderRadius: 2, transition: 'width 0.4s ease' }} />
+                    </div>
+                  </div>
+                </div>
+              </Col>
+              {[
+                { label: '待办', value: todoItems.length, accent: '#ff9f43' },
+                { label: '进行中', value: inProgressItems.length, accent: 'var(--color-primary)' },
+                { label: '已逾期', value: overdueItems.length, accent: '#ff5252' },
+              ].map((s) => (
+                <Col xs={8} lg={4} key={s.label}>
+                  <div style={{ padding: '12px 4px' }}>
+                    <div className="section-title" style={{ marginBottom: 10 }}>{s.label}</div>
+                    <div style={{ fontSize: 44, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.03em', lineHeight: 1 }}>{s.value}</div>
+                    <div style={{ width: 28, height: 2, background: s.accent, marginTop: 14 }} />
+                  </div>
+                </Col>
+              ))}
+            </>
+          )}
         </Row>
 
-        <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
-          <Col xs={24} lg={14}>
-            <Card
-              title={<span style={{ fontSize: 16, fontWeight: 600, color: textPrimary }}>📋 部门任务进度</span>}
-              style={{ background: cardBg, border: `1px solid ${borderColor}`, borderRadius: 16 }}
-            >
-              <Table
-                dataSource={displayItems.slice(0, 8)}
-                rowKey="id"
-                size="small"
-                pagination={false}
-                style={{ borderRadius: 12 }}
-                columns={[
-                  {
-                    title: '任务',
-                    dataIndex: 'title',
-                    key: 'title',
-                    render: (title: string, record: any) => (
-                      <a onClick={() => navigate(`/items/${record.id}`)} style={{ fontWeight: 500 }}>{title}</a>
-                    ),
-                  },
-                  {
-                    title: '负责人',
-                    dataIndex: ['user', 'name'],
-                    key: 'user',
-                    render: (name: string) => name || '-',
-                  },
-                  {
-                    title: '状态',
-                    dataIndex: 'status',
-                    key: 'status',
-                    render: (status: string) => (
-                      <Tag color={STATUS_COLORS[status as keyof typeof STATUS_COLORS]} style={{ borderRadius: 6 }}>
-                        {STATUS_LABELS[status as keyof typeof STATUS_LABELS]}
-                      </Tag>
-                    ),
-                  },
-                  {
-                    title: '截止日期',
-                    dataIndex: 'dueDate',
-                    key: 'dueDate',
-                    render: (date: string) => date ? (
-                      <span style={{ color: isOverdue({ dueDate: date, status: '' } as any) ? '#ff5252' : textSecondary }}>
-                        {dayjs(date).format('MM/DD')}
-                      </span>
-                    ) : '-',
-                  },
-                ]}
-              />
-              {displayItems.length > 8 && (
-                <Button type="link" onClick={() => navigate('/department')} style={{ padding: 0, marginTop: 8 }}>
-                  查看全部 ({displayItems.length})
-                </Button>
+        <Row gutter={[40, 48]}>
+          <Col xs={24} lg={16}>
+            <div style={{ marginBottom: 48 }}>
+              <h2 className="section-heading" style={{ marginBottom: 18 }}>团队任务</h2>
+              {initialLoading ? (
+                <Skeleton active paragraph={{ rows: 4 }} />
+              ) : (
+                <>
+                  <List
+                    size="small"
+                    dataSource={activeItems.slice(0, 8)}
+                    renderItem={(item: any) => (
+                      <List.Item
+                        style={{ cursor: 'pointer', borderRadius: 12, marginBottom: 8, padding: '12px 16px', border: `1px solid ${borderColor}` }}
+                        onClick={() => navigate(`/items/${item.id}`)}
+                      >
+                        <List.Item.Meta
+                          title={<span style={{ fontWeight: 500, color: textPrimary }}>{item.title}</span>}
+                          description={
+                            <Space size={4}>
+                              <span style={{ fontSize: 12, color: textSecondary }}>{item.user?.name || '未分配'}</span>
+                              {item.dueDate && (
+                                <span style={{ color: isOverdue(item) ? '#ff5252' : textSecondary, fontSize: 12 }}>
+                                  · {isOverdue(item) ? '已逾期' : '截止:'} {dayjs(item.dueDate).format('MM/DD')}
+                                </span>
+                              )}
+                            </Space>
+                          }
+                        />
+                        <Tag color={STATUS_COLORS[item.status as keyof typeof STATUS_COLORS]} style={{ borderRadius: 6 }}>
+                          {STATUS_LABELS[item.status as keyof typeof STATUS_LABELS]}
+                        </Tag>
+                      </List.Item>
+                    )}
+                    locale={{
+                      emptyText: (
+                        <div style={{ textAlign: 'center', padding: 40 }}>
+                          <div style={{ fontSize: 40, marginBottom: 12 }}>🎉</div>
+                          <div style={{ color: textSecondary }}>暂无进行中任务</div>
+                        </div>
+                      )
+                    }}
+                  />
+                  {activeItems.length > 8 && (
+                    <Button type="link" onClick={() => navigate('/department')} style={{ padding: 0, marginTop: 12 }}>
+                      查看全部 ({activeItems.length})
+                    </Button>
+                  )}
+                </>
               )}
-            </Card>
+            </div>
           </Col>
 
-          <Col xs={24} lg={10}>
-            <Card
-              title={<span style={{ fontSize: 16, fontWeight: 600, color: textPrimary }}>👥 部门成员</span>}
-              style={{ background: cardBg, border: `1px solid ${borderColor}`, borderRadius: 16 }}
-            >
+          <Col xs={24} lg={8}>
+            <div style={{ marginBottom: 48 }}>
+              <h2 className="section-heading" style={{ marginBottom: 18 }}>部门成员</h2>
               <List
                 dataSource={departmentMembers}
                 renderItem={(member: User) => (
-                  <List.Item>
+                  <List.Item style={{ borderBottom: '1px solid var(--bg-soft)' }}>
                     <List.Item.Meta
-                      avatar={<Avatar style={{ background: '#1677FF' }}>{member.name?.[0] || '?'}</Avatar>}
-                      title={member.name}
-                      description={member.email}
+                      avatar={<Avatar style={{ background: 'var(--color-primary)', color: '#fff' }}>{member.name?.[0] || '?'}</Avatar>}
+                      title={<span style={{ fontWeight: 500, color: textPrimary }}>{member.name}</span>}
+                      description={<span style={{ fontSize: 12, color: textSecondary }}>{member.email}</span>}
                     />
-                    <Tag
-                      color={member.role === 'ADMIN' ? 'red' : member.role === 'DEPARTMENT_ADMIN' ? 'orange' : 'default'}
-                      style={{ borderRadius: 6 }}
-                    >
+                    <Tag style={{
+                      borderRadius: 6,
+                      background: member.role === 'ADMIN' ? '#fef2f2' : member.role === 'DEPARTMENT_ADMIN' ? '#fef6e7' : 'var(--pill-gray-bg)',
+                      color: member.role === 'ADMIN' ? '#b91c1c' : member.role === 'DEPARTMENT_ADMIN' ? '#92400e' : 'var(--pill-gray-fg)',
+                    }}>
                       {member.role === 'ADMIN' ? '管理员' : member.role === 'DEPARTMENT_ADMIN' ? '部门负责人' : '成员'}
                     </Tag>
                   </List.Item>
                 )}
               />
-            </Card>
+            </div>
 
-            <Card
-              title={<span style={{ fontSize: 16, fontWeight: 600, color: '#ff5252' }}>🚨 紧急事项</span>}
-              style={{ background: cardBg, border: `1px solid #ff525230`, borderRadius: 16, marginTop: 16 }}
-            >
-              <List
-                size="small"
-                dataSource={displayItems.filter((i: any) => i.priority === 'URGENT' && i.status !== 'COMPLETED').slice(0, 5)}
-                renderItem={(item: any) => (
-                  <List.Item>
-                    <List.Item.Meta
-                      title={<span style={{ color: '#ff5252', fontWeight: 500 }}>{item.title}</span>}
-                      description={`截止: ${dayjs(item.dueDate).format('MM/DD HH:mm')}`}
-                    />
-                    <Tag color="red" style={{ borderRadius: 6 }}>紧急</Tag>
-                  </List.Item>
-                )}
-                locale={{
-                  emptyText: (
-                    <div style={{ textAlign: 'center', padding: 24 }}>
-                      <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
-                      <div style={{ color: textSecondary }}>暂无紧急事项</div>
-                    </div>
-                  )
-                }}
-              />
-            </Card>
+            {urgentItems.length > 0 && (
+              <div>
+                <h2 className="section-heading" style={{ marginBottom: 18, color: '#ff5252' }}>紧急事项</h2>
+                <List
+                  size="small"
+                  dataSource={urgentItems.slice(0, 5)}
+                  renderItem={(item: any) => (
+                    <List.Item
+                      style={{ cursor: 'pointer', borderBottom: '1px solid var(--bg-soft)' }}
+                      onClick={() => navigate(`/items/${item.id}`)}
+                    >
+                      <List.Item.Meta
+                        title={<span style={{ color: '#ff5252', fontWeight: 500 }}>{item.title}</span>}
+                        description={item.dueDate ? `截止: ${dayjs(item.dueDate).format('MM/DD HH:mm')}` : '无截止日期'}
+                      />
+                      <Tag color="red" style={{ borderRadius: 6 }}>紧急</Tag>
+                    </List.Item>
+                  )}
+                />
+              </div>
+            )}
           </Col>
         </Row>
       </div>
