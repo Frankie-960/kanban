@@ -16,6 +16,8 @@ export interface User {
   department?: Department;
   deepseekApiKey?: string;
   llmProvider?: string;
+  mustChangePassword?: boolean;
+  emailVerified?: boolean;
 }
 
 export interface Department {

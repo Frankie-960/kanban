@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Layout as AntLayout, Menu, Avatar, Dropdown, Switch } from 'antd';
+import { Layout as AntLayout, Menu, Avatar, Dropdown, Switch, Button, message } from 'antd';
 import {
   DashboardOutlined,
   UnorderedListOutlined,
@@ -18,6 +18,7 @@ import {
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAppStore } from '../stores/appStore';
 import { CommandPalette } from './CommandPalette';
+import { authAPI } from '../services/api';
 
 const { Header, Sider, Content } = AntLayout;
 
@@ -55,7 +56,7 @@ export default function Layout() {
   const headerBg = isDark ? '#161b22' : '#ffffff';
   const siderBg = isDark ? '#161b22' : '#ffffff';
   const textPrimary = isDark ? '#e6edf3' : '#1d1d1f';
-  const accentColor = isDark ? '#5A9170' : '#1F3D2E';
+  const accentColor = isDark ? '#4096FF' : '#1677FF';
   const borderColor = isDark ? '#30363d' : '#d2d2d7';
 
   const menuItems = [
@@ -83,6 +84,15 @@ export default function Layout() {
     { key: 'profile', icon: <UserOutlined />, label: user?.name || '用户' },
     { key: 'logout', icon: <LogoutOutlined />, label: '退出登录', danger: true },
   ];
+
+  const handleResendVerification = async () => {
+    try {
+      await authAPI.resendVerification();
+      message.success('激活邮件已发送，请查收');
+    } catch (err: any) {
+      message.error(err.response?.data?.error || '发送失败');
+    }
+  };
 
   const handleMenuClick = ({ key }: { key: string }) => {
     navigate(key);
@@ -157,7 +167,7 @@ export default function Layout() {
           }}
         />
       </Sider>
-      <AntLayout style={{ background: bgColor }}>
+      <AntLayout style={{ background: bgColor, height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <Header
           style={{
             background: headerBg,
@@ -175,7 +185,7 @@ export default function Layout() {
               style={{
                 background: currentView === 'personal'
                   ? (isDark ? '#238636' : '#34c759')
-                  : (isDark ? '#5A9170' : '#1F3D2E'),
+                  : (isDark ? '#4096FF' : '#1677FF'),
                 color: '#fff',
                 border: 'none',
                 borderRadius: 20,
@@ -223,9 +233,51 @@ export default function Layout() {
           style={{
             padding: 24,
             background: bgColor,
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
           }}
         >
-          <Outlet />
+          {user && user.emailVerified === false ? (
+            <div style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexDirection: 'column',
+              gap: 16,
+              padding: 40,
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: 48 }}>📧</div>
+              <div style={{ fontSize: 20, fontWeight: 600, color: isDark ? '#e6edf3' : '#1d1d1f' }}>
+                请验证您的邮箱
+              </div>
+              <div style={{ fontSize: 14, color: isDark ? '#8b949e' : '#86868b', maxWidth: 360, lineHeight: 1.7 }}>
+                我们已向 <strong>{user.email}</strong> 发送了激活链接。<br />
+                请查收邮件并点击链接完成验证后，才能使用系统功能。
+              </div>
+              <Button
+                type="primary"
+                size="large"
+                onClick={handleResendVerification}
+                style={{ borderRadius: 10, marginTop: 8 }}
+              >
+                重新发送验证邮件
+              </Button>
+              <Button
+                type="link"
+                size="small"
+                style={{ color: isDark ? '#8b949e' : '#86868b' }}
+                onClick={() => { logout(); navigate('/login'); }}
+              >
+                退出登录，换个账号
+              </Button>
+            </div>
+          ) : (
+            <Outlet />
+          )}
         </Content>
       </AntLayout>
       <CommandPalette open={cmdkOpen} onClose={() => setCmdkOpen(false)} />

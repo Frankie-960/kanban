@@ -6,7 +6,7 @@ export const getTheme = () => {
     textPrimary: isDark ? '#e6edf3' : '#1d1d1f',
     textSecondary: isDark ? '#8b949e' : '#86868b',
     borderColor: isDark ? '#30363d' : '#d2d2d7',
-    accentColor: isDark ? '#5A9170' : '#1F3D2E',
+    accentColor: isDark ? '#4096FF' : '#1677FF',
   };
 };
 

@@ -487,7 +487,7 @@ export default function Dashboard() {
                 renderItem={(member: User) => (
                   <List.Item>
                     <List.Item.Meta
-                      avatar={<Avatar style={{ background: '#1F3D2E' }}>{member.name?.[0] || '?'}</Avatar>}
+                      avatar={<Avatar style={{ background: '#1677FF' }}>{member.name?.[0] || '?'}</Avatar>}
                       title={member.name}
                       description={member.email}
                     />
@@ -543,7 +543,7 @@ export default function Dashboard() {
             style={{
               background: currentView === 'personal'
                 ? (isDark ? '#238636' : '#34c759')
-                : (isDark ? '#5A9170' : '#1F3D2E'),
+                : (isDark ? '#4096FF' : '#1677FF'),
               color: '#fff',
               border: 'none',
               borderRadius: 20,

@@ -394,73 +394,96 @@ body.dark-mode .kanban-card[data-overdue="true"] {
   background: var(--bg-card) !important;
 }
 
-/* 统计悬浮栏 */
+/* 顶部统计数据条 —— 克制的单行数据栏（无胶囊、无 emoji） */
 #kpi-bar {
   position: sticky;
   top: 0;
   z-index: 200;
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
+  align-items: stretch;
+  gap: 0;
+  padding: 10px 24px;
   background: var(--bg-card);
   border-bottom: 1px solid var(--text-tertiary);
-  box-shadow: 0 1px 8px rgba(0,0,0,.06);
   font-size: 13px;
   flex-wrap: wrap;
   transition: background .2s, border-color .2s;
 }
 body.dark-mode #kpi-bar {
   border-bottom-color: #30363d;
-  box-shadow: 0 1px 8px rgba(0,0,0,.3);
 }
-.kpi-card {
+
+/* 左侧标题锚点，与数据用竖线分隔 */
+#kpi-title {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  border-radius: 8px;
-  background: var(--bg-hover);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  padding-right: 20px;
+  margin-right: 4px;
+  border-right: 1px solid var(--text-tertiary);
+}
+
+/* 每个指标：小灰标签 + 大号数字竖排，相邻项间一条细竖线分隔 */
+.kpi-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1px;
+  padding: 0 18px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
   cursor: default;
   white-space: nowrap;
-  transition: background .15s;
+  position: relative;
 }
-body.dark-mode .kpi-card {
-  background: var(--bg-hover);
+.kpi-card + .kpi-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 22px;
+  width: 1px;
+  background: var(--text-tertiary);
+  opacity: .55;
 }
-.kpi-card:hover {
-  background: #e8f0fe;
-}
-body.dark-mode .kpi-card:hover {
-  background: #21262d;
-}
+.kpi-card:hover { background: transparent; }
 .kpi-label {
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .2px;
 }
 .kpi-value {
-  font-weight: 700;
-  font-size: 15px;
+  font-weight: 600;
+  font-size: 17px;
+  line-height: 1.15;
   color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
 }
-.kpi-card.kpi-overdue .kpi-value { color: var(--color-danger); }
-.kpi-card.kpi-completed .kpi-value { color: var(--color-success); }
-.kpi-card.kpi-amount .kpi-value { color: var(--color-primary); }
-.kpi-card.kpi-save .kpi-value { color: var(--color-success); }
+/* 默认全中性，仅逾期/节约由 JS 按需着色 */
 .kpi-spacer { flex: 1; }
 .kpi-report-btn {
-  padding: 6px 16px;
+  align-self: center;
+  padding: 7px 16px;
   background: var(--color-primary);
   color: #fff;
   border: none;
   border-radius: 8px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
-  transition: background .15s;
+  transition: background .15s, box-shadow .15s;
   white-space: nowrap;
 }
-.kpi-report-btn:hover { background: var(--color-primary-hover); }
+.kpi-report-btn:hover {
+  background: var(--color-primary-hover);
+  box-shadow: 0 2px 8px var(--color-primary-tint);
+}
 
 /* ── 亮色模式强制重置 ── 防止切换后 Ant Design 内部样式残留 ── */
 body:not(.dark-mode) .ant-tag {

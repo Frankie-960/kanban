@@ -40,7 +40,7 @@ export default function ItemList() {
   const cardBg = isDark ? '#161b22' : '#ffffff';
   const textPrimary = isDark ? '#e6edf3' : '#1d1d1f';
   const textSecondary = isDark ? '#8b949e' : '#86868b';
-  const accentColor = isDark ? '#5A9170' : '#1F3D2E';
+  const accentColor = isDark ? '#4096FF' : '#1677FF';
 
   const filteredItems = useMemo(() => items.filter((item) => {
     if (searchText && !item.title.toLowerCase().includes(searchText.toLowerCase())) return false;

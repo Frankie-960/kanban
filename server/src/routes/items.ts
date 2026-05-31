@@ -143,6 +143,8 @@ router.get('/summary', async (req: AuthRequest, res) => {
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
     const monthEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
     const monthWhere = { AND: [...(where.AND as object[]), { createdAt: { gte: monthStart, lte: monthEnd } }] };
+    // 成本统计只针对招标寻源（PROCUREMENT_SOURCING）事项
+    const sourcingMonthWhere = { AND: [...(where.AND as object[]), { createdAt: { gte: monthStart, lte: monthEnd } }, { category: 'PROCUREMENT_SOURCING' }] };
     const monthLabel = `${now.getFullYear()}年${now.getMonth() + 1}月`;
 
     const [
@@ -180,7 +182,7 @@ router.get('/summary', async (req: AuthRequest, res) => {
         select: { id: true, title: true, estimatedAmount: true, finalAmount: true, status: true, currency: true, dueDate: true },
       }),
       prisma.item.aggregate({
-        where: monthWhere,
+        where: sourcingMonthWhere,
         _count: { id: true },
         _sum: { estimatedAmount: true, finalAmount: true },
       }),
@@ -195,7 +197,7 @@ router.get('/summary', async (req: AuthRequest, res) => {
       prisma.item.findMany({
         where: {
           AND: [
-            ...(monthWhere.AND as object[]),
+            ...(sourcingMonthWhere.AND as object[]),
             { status: 'COMPLETED' },
             { estimatedAmount: { not: null }, finalAmount: { not: null } },
           ],

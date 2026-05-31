@@ -42,42 +42,49 @@ app.use(cors(allowedOrigins.length > 0 ? { origin: allowedOrigins, credentials: 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
-  message: { error: 'Too many login attempts, please try again later' },
+  message: { error: '登录尝试过于频繁，请 15 分钟后再试' },
   standardHeaders: true,
   legacyHeaders: false,
 });
 const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 10,
-  message: { error: 'Too many registration attempts' },
+  message: { error: '注册请求过于频繁，请 1 小时后再试' },
   standardHeaders: true,
   legacyHeaders: false,
 });
 const reportLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 5,
-  message: { error: 'Too many report generation requests, please wait a moment' },
+  message: { error: '报告生成请求过于频繁，请稍后再试' },
   standardHeaders: true,
   legacyHeaders: false,
 });
 const voiceLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 10,
-  message: { error: 'Too many voice requests, please wait a moment' },
+  message: { error: '语音请求过于频繁，请稍后再试' },
   standardHeaders: true,
   legacyHeaders: false,
 });
 const forgotPasswordLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 3,
-  message: { error: 'Too many password reset requests, please try again later' },
+  message: { error: '密码重置请求过于频繁，请 15 分钟后再试' },
   standardHeaders: true,
   legacyHeaders: false,
 });
 const resetPasswordLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
-  message: { error: 'Too many password reset attempts, please try again later' },
+  message: { error: '密码重置尝试过于频繁，请 15 分钟后再试' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+const resendVerificationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 3,
+  message: { error: '发送次数过多，请 15 分钟后再试' },
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -86,6 +93,7 @@ app.use('/api/auth/login', loginLimiter);
 app.use('/api/auth/register', registerLimiter);
 app.use('/api/auth/forgot-password', forgotPasswordLimiter);
 app.use('/api/auth/reset-password', resetPasswordLimiter);
+app.use('/api/auth/resend-verification', resendVerificationLimiter);
 app.use('/api/reports/generate', reportLimiter);
 app.use('/api/voice', voiceLimiter);
 
@@ -136,12 +144,7 @@ app.use('/api', (_req, res) => {
 const distPath = path.join(__dirname, '../../dist');
 app.use(express.static(distPath));
 
-// Standalone pages — must be before the SPA wildcard so Vue Router doesn't intercept them
-app.get('/forgot-password', (_req, res) => res.sendFile(path.join(distPath, 'forgot-password.html')));
-app.get('/reset-password',  (_req, res) => res.sendFile(path.join(distPath, 'reset-password.html')));
-app.get('/admin/users',     (_req, res) => res.sendFile(path.join(distPath, 'admin-users.html')));
-
-// SPA fallback — let Vue Router handle all other non-API routes
+// SPA fallback — React Router handles all client-side routes
 app.get('*', (_req, res) => {
   res.sendFile(path.join(distPath, 'index.html'));
 });

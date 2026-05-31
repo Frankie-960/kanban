@@ -279,8 +279,8 @@ export default function ReportDetail() {
         <Col xs={12} sm={6}>
           <Card style={{ background: theme.cardBg, border: `1px solid ${theme.borderColor}`, borderRadius: 16 }}>
             <div style={{ textAlign: 'center' }}>
-              <ClockCircleOutlined style={{ fontSize: 32, color: '#1F3D2E' }} />
-              <div style={{ fontSize: 28, fontWeight: 'bold', color: '#1F3D2E', marginTop: 8 }}>{content.inProgressTasks}</div>
+              <ClockCircleOutlined style={{ fontSize: 32, color: '#1677FF' }} />
+              <div style={{ fontSize: 28, fontWeight: 'bold', color: '#1677FF', marginTop: 8 }}>{content.inProgressTasks}</div>
               <div style={{ color: theme.textSecondary, marginTop: 4 }}>进行中</div>
             </div>
           </Card>
@@ -376,7 +376,7 @@ export default function ReportDetail() {
                           {task.status === 'COMPLETED' ? (
                             <CheckCircleOutlined style={{ color: '#34c759', fontSize: 12 }} />
                           ) : task.status === 'IN_PROGRESS' ? (
-                            <ClockCircleOutlined style={{ color: '#1F3D2E', fontSize: 12 }} />
+                            <ClockCircleOutlined style={{ color: '#1677FF', fontSize: 12 }} />
                           ) : (
                             <ExclamationCircleOutlined style={{ color: '#ff9f0a', fontSize: 12 }} />
                           )}
@@ -398,7 +398,7 @@ export default function ReportDetail() {
                             <Tag style={{ fontSize: 10, borderRadius: 4 }}>¥{task.estimatedAmount.toLocaleString()}</Tag>
                           )}
                           {task.progress && (
-                            <span style={{ fontSize: 10, color: '#1F3D2E' }}>{task.progress}</span>
+                            <span style={{ fontSize: 10, color: '#1677FF' }}>{task.progress}</span>
                           )}
                         </div>
                       </li>

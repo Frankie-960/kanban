@@ -9,16 +9,17 @@ router.use(authMiddleware);
 const PROJECT_STATUS = ['PLANNING', 'ACTIVE', 'ON_HOLD', 'COMPLETED', 'CANCELLED'] as const;
 
 const createProjectSchema = z.object({
-  code: z.string().optional(),
+  // 可空字段统一 .nullable().optional()：前端表单空值会发 null，需容忍（数据库这些列均允许 NULL）
+  code: z.string().nullable().optional(),
   name: z.string().min(1),
-  description: z.string().optional(),
+  description: z.string().nullable().optional(),
   status: z.enum(PROJECT_STATUS).optional(),
-  ownerId: z.string().optional(),
-  departmentId: z.string().optional(),
-  totalBudget: z.number().optional(),
-  currency: z.string().optional(),
-  startDate: z.string().datetime().optional(),
-  dueDate: z.string().datetime().optional(),
+  ownerId: z.string().optional(), // 不可空：DB 该列非空，update 时不接受 null
+  departmentId: z.string().nullable().optional(),
+  totalBudget: z.number().nullable().optional(),
+  currency: z.string().nullable().optional(),
+  startDate: z.string().datetime().nullable().optional(),
+  dueDate: z.string().datetime().nullable().optional(),
   visibility: z.enum(['PRIVATE', 'DEPARTMENT', 'SHARED']).optional(),
 });
 

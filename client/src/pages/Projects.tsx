@@ -50,11 +50,16 @@ export default function Projects() {
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
-      const payload: Partial<Project> = {
+      const raw: Record<string, unknown> = {
         ...values,
         startDate: values.startDate ? values.startDate.toISOString() : undefined,
         dueDate: values.dueDate ? values.dueDate.toISOString() : undefined,
       };
+      // 剔除 null/undefined：后端可选字段不接受 null（openEdit 用 {...p} 会带入数据库的 null 空字段）。
+      // 注意：文本框清空得到的是 ""，仍会保留发送，以支持把字段清空。
+      const payload = Object.fromEntries(
+        Object.entries(raw).filter(([, v]) => v !== null && v !== undefined)
+      ) as Partial<Project>;
       if (editing) {
         await projectsAPI.update(editing.id, payload);
         message.success('已更新');

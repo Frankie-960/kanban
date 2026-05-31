@@ -47,6 +47,16 @@ export const authAPI = {
   getUsers: () => api.get<User[]>('/auth/users'),
   updateUserRole: (id: string, role: string) =>
     api.put<User>(`/auth/users/${id}/role`, { role }),
+  resetUserPassword: (id: string) =>
+    api.post<{ tempPassword: string; message: string }>(`/auth/users/${id}/reset-password`),
+  verifyEmail: (token: string) =>
+    api.post<{ message: string }>('/auth/verify-email', { token }),
+  resendVerification: () =>
+    api.post<{ message: string }>('/auth/resend-verification'),
+  forgotPassword: (email: string) =>
+    api.post<{ message: string }>('/auth/forgot-password', { email }),
+  resetPassword: (token: string, newPassword: string) =>
+    api.post<{ message: string }>('/auth/reset-password', { token, newPassword }),
 };
 
 // Items API

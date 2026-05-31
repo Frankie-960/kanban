@@ -60,7 +60,7 @@
     var bar = document.createElement('div');
     bar.id = 'kpi-bar';
     bar.innerHTML =
-      '<span class="kpi-label" id="kpi-title" style="font-weight:600;color:var(--text-primary)">📊 本月采购概况</span>' +
+      '<span class="kpi-label" id="kpi-title" style="font-weight:600;color:var(--text-primary)">本月采购概况</span>' +
       '<div class="kpi-card" id="kpi-total">' +
         '<span class="kpi-label">本月任务</span>' +
         '<span class="kpi-value" id="kv-total">—</span>' +
@@ -74,7 +74,7 @@
         '<span class="kpi-value" id="kv-progress">—</span>' +
       '</div>' +
       '<div class="kpi-card kpi-overdue" id="kpi-overdue">' +
-        '<span class="kpi-label">⚠ 已逾期</span>' +
+        '<span class="kpi-label">已逾期</span>' +
         '<span class="kpi-value" id="kv-overdue">—</span>' +
       '</div>' +
       '<div class="kpi-card kpi-amount" id="kpi-est">' +
@@ -82,11 +82,11 @@
         '<span class="kpi-value" id="kv-est">—</span>' +
       '</div>' +
       '<div class="kpi-card kpi-save" id="kpi-save">' +
-        '<span class="kpi-label">💰 节约金额</span>' +
+        '<span class="kpi-label">节约金额</span>' +
         '<span class="kpi-value" id="kv-save">—</span>' +
       '</div>' +
       '<div class="kpi-spacer"></div>' +
-      '<button class="kpi-report-btn" id="kpi-report-btn">⚡ 快速生成月报</button>';
+      '<button class="kpi-report-btn" id="kpi-report-btn">生成月报</button>';
     return bar;
   }
 
@@ -116,7 +116,7 @@
       // Update title with month label
       var titleEl = bar.querySelector('#kpi-title');
       if (titleEl && m.period && m.period.label) {
-        titleEl.textContent = '📊 ' + m.period.label + ' 采购概况';
+        titleEl.textContent = m.period.label + ' 采购概况';
       }
 
       bar.querySelector('#kv-total').textContent    = m.count || 0;
@@ -126,25 +126,12 @@
       bar.querySelector('#kv-est').textContent      = fmtMoney(m.estimatedAmount);
       bar.querySelector('#kv-save').textContent     = m.savedAmount > 0 ? fmtMoney(m.savedAmount) : '—';
 
-      // 逾期数 > 0 时闪红
-      var overdueCard = bar.querySelector('#kpi-overdue');
-      if (m.overdueCount > 0) {
-        overdueCard.style.background = 'rgba(255,69,58,.12)';
-        overdueCard.style.border = '1px solid rgba(255,69,58,.3)';
-      } else {
-        overdueCard.style.background = '';
-        overdueCard.style.border = '';
-      }
+      // 仅在异常/正向信号时给数字着色，其余保持中性
+      var overdueVal = bar.querySelector('#kv-overdue');
+      if (overdueVal) overdueVal.style.color = m.overdueCount > 0 ? 'var(--color-danger)' : '';
 
-      // 节约金额 > 0 时标绿
-      var saveCard = bar.querySelector('#kpi-save');
-      if (m.savedAmount > 0) {
-        saveCard.style.background = 'rgba(52,199,89,.10)';
-        saveCard.style.border = '1px solid rgba(52,199,89,.25)';
-      } else {
-        saveCard.style.background = '';
-        saveCard.style.border = '';
-      }
+      var saveVal = bar.querySelector('#kv-save');
+      if (saveVal) saveVal.style.color = m.savedAmount > 0 ? 'var(--color-success)' : '';
     });
   }
 
@@ -203,15 +190,8 @@
   var fpShown = false;
 
   function showForgotLink() {
-    if (fpShown) return;
-    if (!document.querySelector('input[type="password"]')) return;
-
-    var el = document.createElement('div');
-    el.id = 'fp-overlay';
-    el.style.cssText = 'position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;padding:20px;pointer-events:none;z-index:9998';
-    el.innerHTML = '<a href="/forgot-password" style="pointer-events:auto;font-size:13px;color:#2563eb;background:rgba(255,255,255,.96);backdrop-filter:blur(4px);padding:7px 20px;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,.12);text-decoration:none;font-weight:500;border:1px solid #dbeafe;">忘记密码？</a>';
-    document.body.appendChild(el);
-    fpShown = true;
+    // 已禁用：React 主体的登录页已含"忘记密码"链接，悬浮注入会造成重复入口
+    return;
   }
 
   function hideForgotLink() {

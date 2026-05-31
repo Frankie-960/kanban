@@ -58,6 +58,7 @@ interface SortableCardProps {
   onCompleteClick: () => void;
   onDeleteClick: () => void;
   onVisibilityChange: (v: Visibility) => void;
+  compact?: boolean;
 }
 
 function PriorityPill({ priority }: { priority: Priority }) {
@@ -82,6 +83,7 @@ function MilestoneStepper({ item }: { item: Item }) {
 function SortableCard({
   item, currentView, selectMode, selected,
   onCardClick, onSelectToggle, onStartClick, onCompleteClick, onDeleteClick, onVisibilityChange,
+  compact = false,
 }: SortableCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
@@ -109,6 +111,48 @@ function SortableCard({
   ].filter(Boolean).join(' ');
 
   const dragProps = selectMode ? {} : { ...attributes, ...listeners };
+
+  if (compact) {
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        className={`kanban-card-mini priority-${item.priority.toLowerCase()} ${stale ? 'stale' : ''} ${selectMode ? 'select-mode' : ''} ${selected ? 'selected' : ''}`.trim()}
+        onClick={handleClick}
+        {...dragProps}
+      >
+        {selectMode && <span className="card-checkbox">{selected ? '✓' : ''}</span>}
+        <div className="cm-row1">
+          <span className="cc-status-dot" style={{ background: STATUS_CONFIG[item.status].color }} />
+          <span className="cc-title">{item.title}</span>
+          {item.dueDate && (
+            <span className="cc-due" style={{ color: isOverdue(item) ? '#ff453a' : undefined }}>
+              {dayjs(item.dueDate).format('MM/DD')}{isOverdue(item) ? ' 逾期' : ''}
+            </span>
+          )}
+        </div>
+        <div className="cm-row2">
+          <Tag style={{ fontSize: 11, borderRadius: 6, margin: 0 }}>{CATEGORY_LABELS[item.category]}</Tag>
+          {item.subStatus && <span className="cm-substatus">{item.subStatus}</span>}
+          {stale && <span className="cm-stale">⚠ 呆滞 {staleDays(item)} 天</span>}
+        </div>
+        <div className="cm-row3">
+          <MilestoneStepper item={item} />
+          {!selectMode && (
+            <div className="card-actions" style={{ display: 'flex', gap: 6 }}>
+              {item.status === 'TODO' && (
+                <Button type="primary" size="small" onClick={(e) => { e.stopPropagation(); onStartClick(); }} style={{ borderRadius: 6, fontSize: 12 }}>开始</Button>
+              )}
+              {item.status === 'IN_PROGRESS' && (
+                <Button type="primary" size="small" onClick={(e) => { e.stopPropagation(); onCompleteClick(); }} style={{ borderRadius: 6, fontSize: 12 }}>完成</Button>
+              )}
+              <Button size="small" danger onClick={(e) => { e.stopPropagation(); onDeleteClick(); }} style={{ borderRadius: 6, fontSize: 12 }}>删除</Button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div ref={setNodeRef} style={style} className={cardClassName} onClick={handleClick} {...dragProps}>
@@ -426,21 +470,21 @@ export default function Kanban() {
   const cardBg = isDark ? '#161b22' : '#ffffff';
   const borderColor = isDark ? '#30363d' : '#d2d2d7';
 
-  const renderCard = (item: Item) => (
-    <SortableCard
-      key={item.id}
-      item={item}
-      currentView={currentView}
-      selectMode={selectMode}
-      selected={selectedIds.has(item.id)}
-      onCardClick={() => { sessionStorage.setItem('itemDetailFrom', 'kanban'); navigate(`/items/${item.id}`); }}
-      onSelectToggle={toggleSelect}
-      onStartClick={() => handleStatusChange(item, 'start')}
-      onCompleteClick={() => handleStatusChange(item, 'complete')}
-      onDeleteClick={() => setConfirmModal({ visible: true, item, action: 'delete' })}
-      onVisibilityChange={(v) => handleVisibilityChange(item, v)}
-    />
-  );
+  const cardCommonProps = (item: Item) => ({
+    item,
+    currentView,
+    selectMode,
+    selected: selectedIds.has(item.id),
+    onCardClick: () => { sessionStorage.setItem('itemDetailFrom', 'kanban'); navigate(`/items/${item.id}`); },
+    onSelectToggle: toggleSelect,
+    onStartClick: () => handleStatusChange(item, 'start'),
+    onCompleteClick: () => handleStatusChange(item, 'complete'),
+    onDeleteClick: () => setConfirmModal({ visible: true, item, action: 'delete' }),
+    onVisibilityChange: (v: Visibility) => handleVisibilityChange(item, v),
+  });
+
+  const renderCard = (item: Item) => <SortableCard key={item.id} {...cardCommonProps(item)} />;
+  const renderCompactCard = (item: Item) => <SortableCard key={item.id} {...cardCommonProps(item)} compact />;
 
   const priorityMenu = (['URGENT', 'HIGH', 'MEDIUM', 'LOW'] as Priority[]).map((p) => ({
     key: p, label: PRIORITY_LABELS[p],
@@ -450,7 +494,7 @@ export default function Kanban() {
   }));
 
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
       <div className="kanban-toolbar">
         <Segmented
           value={layoutMode}
@@ -573,9 +617,11 @@ export default function Kanban() {
                     <span className="quadrant-count">{cell.length} 项</span>
                   </div>
                   <SortableContext items={cell.map((i) => i.id)} strategy={verticalListSortingStrategy}>
-                    {cell.length === 0 ? (
-                      <div className="quadrant-empty">—</div>
-                    ) : cell.map(renderCard)}
+                    <div className="quadrant-cards">
+                      {cell.length === 0 ? (
+                        <div className="quadrant-empty">—</div>
+                      ) : cell.map(renderCompactCard)}
+                    </div>
                   </SortableContext>
                 </div>
               );

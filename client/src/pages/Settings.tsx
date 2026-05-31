@@ -371,7 +371,7 @@ export default function Settings() {
         <div style={{ maxWidth: 600 }}>
           <Card title={<span style={{ fontSize: 16, fontWeight: 600 }}>个人信息</span>} style={{ background: theme.cardBg, border: `1px solid ${theme.borderColor}`, borderRadius: 16, marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}>
-              <Avatar size={64} icon={<UserOutlined />} style={{ background: '#1F3D2E' }} />
+              <Avatar size={64} icon={<UserOutlined />} style={{ background: '#1677FF' }} />
               <div style={{ marginLeft: 16 }}>
                 <div style={{ fontSize: 18, fontWeight: 500, color: theme.textPrimary }}>{user?.name}</div>
                 <div style={{ color: theme.textSecondary }}>{user?.email}</div>

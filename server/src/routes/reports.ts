@@ -313,10 +313,11 @@ router.post('/generate', async (req: AuthRequest, res) => {
     const enrichedContent = {
       ...content,
       projectStats,
-      totalEstimatedAmount: content.totalEstimatedAmount || costSummary.totalEstimatedAmount,
-      totalFinalAmount: content.totalFinalAmount || costSummary.totalFinalAmount,
-      totalSavings: content.totalSavings !== undefined ? content.totalSavings : costSummary.totalSavings,
-      savingsRate: content.savingsRate !== undefined ? content.savingsRate : costSummary.savingsRate,
+      // 成本数据以服务端 computedCostSummary 为准（只统计 PROCUREMENT_SOURCING）
+      totalEstimatedAmount: costSummary.totalEstimatedAmount,
+      totalFinalAmount: costSummary.totalFinalAmount,
+      totalSavings: costSummary.totalSavings,
+      savingsRate: costSummary.savingsRate,
       currency: costSummary.currency || 'CNY',
     };
 
@@ -482,11 +483,13 @@ async function computeProjectStats(prisma: any, userId: string, deptId: string |
 }
 
 function computeCostSummary(items: any[]) {
+  // 成本统计只针对招标寻源（PROCUREMENT_SOURCING）事项
+  const sourcingItems = items.filter((i: any) => i.category === 'PROCUREMENT_SOURCING');
   let totalEstimatedAmount = 0;
   let totalFinalAmount = 0;
   let currency = 'CNY';
 
-  for (const item of items) {
+  for (const item of sourcingItems) {
     if (item.estimatedAmount) totalEstimatedAmount += Number(item.estimatedAmount);
     if (item.finalAmount) totalFinalAmount += Number(item.finalAmount);
     if (item.currency && item.currency !== 'CNY') currency = item.currency;

@@ -308,7 +308,7 @@ export default function Department() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <FileTextOutlined style={{ color: '#1F3D2E' }} />
+              <FileTextOutlined style={{ color: '#1677FF' }} />
               <span style={{ fontWeight: 600, fontSize: 15 }}>{ann.title}</span>
               {ann.isWithdrawn && <Tag color="default" style={{ borderRadius: 4 }}>已撤回</Tag>}
               {ann.isExpired && <Tag color="orange" style={{ borderRadius: 4 }}>已过期</Tag>}
@@ -424,7 +424,7 @@ export default function Department() {
               renderItem={(dept) => (
                 <List.Item style={{ cursor: 'pointer', padding: '12px 0' }} onClick={() => loadDepartmentDetails(dept)}>
                   <List.Item.Meta
-                    avatar={<Avatar icon={<TeamOutlined />} style={{ background: selectedDepartment?.id === dept.id ? '#34c759' : '#1F3D2E' }} />}
+                    avatar={<Avatar icon={<TeamOutlined />} style={{ background: selectedDepartment?.id === dept.id ? '#34c759' : '#1677FF' }} />}
                     title={<span style={{ fontWeight: 500 }}>{dept.name}</span>}
                     description={<span style={{ color: theme.textSecondary, fontSize: 13 }}>{dept.description || '暂无描述'}</span>}
                   />
@@ -439,14 +439,14 @@ export default function Department() {
         </Card>
       </div>
 
-      {/* 我的部门公告区域 - 用户已加入部门时始终显示 */}
+      {/* 我发布的部门任务区域 - 用户已加入部门时始终显示 */}
       {user?.departmentId && !selectedDepartment && (
         <Card
-          title={<span style={{ fontSize: 16, fontWeight: 600 }}>📢 我的部门公告</span>}
+          title={<span style={{ fontSize: 16, fontWeight: 600 }}>📢 我发布的部门任务</span>}
           extra={
             canPublishAnnouncement() && (
               <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateAnnouncementModalVisible(true)} style={{ borderRadius: 6 }}>
-                发布公告
+                发布任务
               </Button>
             )
           }
@@ -454,12 +454,12 @@ export default function Department() {
         >
           {myDeptAnnouncements.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 40, color: theme.textSecondary }}>
-              {canPublishAnnouncement() ? '暂无公告，点击上方"发布公告"创建' : '暂无公告'}
+              {canPublishAnnouncement() ? '暂无公告，点击上方"发布任务"创建' : '暂无公告'}
             </div>
           ) : (
             activeAnnouncements(myDeptAnnouncements).length === 0 ? (
               <div style={{ textAlign: 'center', padding: 40, color: theme.textSecondary }}>
-                暂无公告 {canPublishAnnouncement() && '，点击上方"发布公告"创建'}
+                暂无公告 {canPublishAnnouncement() && '，点击上方"发布任务"创建'}
               </div>
             ) : (
               activeAnnouncements(myDeptAnnouncements).map(ann => renderAnnouncementCard(ann, myDeptMembers))
@@ -476,7 +476,7 @@ export default function Department() {
             <Space>
               {canPublishAnnouncement() && (
                 <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateAnnouncementModalVisible(true)} style={{ borderRadius: 6 }}>
-                  发布公告
+                  发布任务
                 </Button>
               )}
               <Button onClick={() => setSelectedDepartment(null)} style={{ borderRadius: 6 }}>
@@ -493,7 +493,7 @@ export default function Department() {
           ) : (
             activeAnnouncements(announcements).length === 0 ? (
               <div style={{ textAlign: 'center', padding: 40, color: theme.textSecondary }}>
-                暂无公告 {canPublishAnnouncement() && '，点击上方"发布公告"创建'}
+                暂无公告 {canPublishAnnouncement() && '，点击上方"发布任务"创建'}
               </div>
             ) : (
               activeAnnouncements(announcements).map(ann => renderAnnouncementCard(ann, departmentMembers))
@@ -583,7 +583,7 @@ export default function Department() {
       </Modal>
 
       <Modal
-        title="发布公告"
+        title="发布任务"
         open={createAnnouncementModalVisible}
         onOk={handleCreateAnnouncement}
         onCancel={() => {

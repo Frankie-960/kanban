@@ -65,6 +65,36 @@ export default function Admin() {
     }
   };
 
+  const handleResetPassword = (user: User) => {
+    Modal.confirm({
+      title: '强制重置密码',
+      content: `确认要重置 ${user.name} 的密码吗？该操作会生成一个新的临时密码，并要求该用户下次登录时强制修改。`,
+      okText: '确认重置',
+      okType: 'danger',
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          const res = await authAPI.resetUserPassword(user.id);
+          const tmp = res.data.tempPassword;
+          Modal.success({
+            title: '密码已重置',
+            content: (
+              <div>
+                <p style={{ marginBottom: 8 }}>临时密码（请复制并告知该用户）：</p>
+                <div style={{ fontFamily: 'monospace', fontSize: 16, fontWeight: 600, padding: 12, background: '#f5f5f7', borderRadius: 8, marginBottom: 12, wordBreak: 'break-all' }}>{tmp}</div>
+                <Button size="small" onClick={() => { navigator.clipboard.writeText(tmp); message.success('已复制到剪贴板'); }}>复制密码</Button>
+                <p style={{ marginTop: 12, fontSize: 12, color: '#999' }}>用户下次登录将被强制要求修改密码。</p>
+              </div>
+            ),
+            width: 460,
+          });
+        } catch (err: any) {
+          message.error(err.response?.data?.error || '重置失败');
+        }
+      },
+    });
+  };
+
   const columns = [
     {
       title: '用户',
@@ -96,12 +126,17 @@ export default function Admin() {
     {
       title: '操作',
       key: 'action',
-      width: 120,
+      width: 200,
       render: (_: any, record: User) => (
         record.id !== currentUser?.id && (
-          <Button type="link" icon={<LockOutlined />} onClick={() => handleEditRole(record)} style={{ padding: 0 }}>
-            修改角色
-          </Button>
+          <Space size="small">
+            <Button type="link" icon={<LockOutlined />} onClick={() => handleEditRole(record)} style={{ padding: 0 }}>
+              修改角色
+            </Button>
+            <Button type="link" danger onClick={() => handleResetPassword(record)} style={{ padding: 0 }}>
+              重置密码
+            </Button>
+          </Space>
         )
       ),
     },

@@ -72,6 +72,13 @@ contract-generator-deployment/
 ### 公告 JSON 字段
 - `targetUserIds / linkedItemIds / confirmations / readBy` 全部用 `parseAnnouncement()` 解析后再响应
 
+### 代码组织约定（渐进式分层 · 2026-05 起）
+为支撑快速迭代，按"绞杀者模式"逐步分层，**不做集中式大重构**：
+- **新代码必须分层**：路由只做"解析请求 → 调 service → 返回响应/状态码"；业务逻辑、事务、跨表编排放 `services/`；可见性/权限过滤放 `lib/visibility.ts`。
+- **统一错误处理**：路由用 `asyncHandler()`（`lib/http.ts`）包裹，不再手写 `try/catch + console.error + res.status(500)`。业务错误 `throw new AppError(status, msg)`，`errorHandler` 统一转 HTTP；`ZodError` 自动 → 400。
+- **可见性唯一来源**：`lib/visibility.ts` 的 `itemListVisibility` / `itemReadVisibility`。⚠ 列表默认不含 `SHARED`、单条读取含 `SHARED`（历史遗留，P1 拆 items 时再统一，届时只改这一个文件）。
+- **老代码"碰到才搬"**：本次迭代改到哪个域，就把那个域的路由按上述三层重构，不要一次性全改。
+
 ## 数据库变更流程
 ```bash
 # 修改 schema.prisma 后执行：

@@ -151,16 +151,17 @@ function buildPrompt(
   prompt += `- 已逾期: ${overdueItems.length}\n`;
   prompt += `- 完成率: ${items.length > 0 ? Math.round((completedItems.length / items.length) * 100) : 0}%\n\n`;
 
-  // Cost data
-  const totalEst = items.reduce((s, i) => s + (i.estimatedAmount || 0), 0);
-  const totalFinal = items.reduce((s, i) => s + (i.finalAmount || 0), 0);
+  // Cost data — 只统计招标寻源（PROCUREMENT_SOURCING）事项
+  const sourcingItems = items.filter((i) => i.category === 'PROCUREMENT_SOURCING');
+  const totalEst = sourcingItems.reduce((s, i) => s + (i.estimatedAmount || 0), 0);
+  const totalFinal = sourcingItems.reduce((s, i) => s + (i.finalAmount || 0), 0);
   const totalSavings = totalEst - totalFinal;
   const savingsRate = totalEst > 0 ? ((totalEst - totalFinal) / totalEst * 100).toFixed(1) : '0.0';
-  const overBudgetItems = items.filter((i) => i.finalAmount && i.estimatedAmount && i.finalAmount > i.estimatedAmount);
-  const withEstAmount = items.filter((i) => i.estimatedAmount);
+  const overBudgetItems = sourcingItems.filter((i) => i.finalAmount && i.estimatedAmount && i.finalAmount > i.estimatedAmount);
+  const withEstAmount = sourcingItems.filter((i) => i.estimatedAmount);
 
   prompt += `【成本分析】💰\n`;
-  prompt += `- 有预估金额的任务数: ${withEstAmount.length}\n`;
+  prompt += `- 有预估金额的招标事项数: ${withEstAmount.length}\n`;
   prompt += `- 预估总金额: ${totalEst.toLocaleString()} 元\n`;
   prompt += `- 实际成交总金额: ${totalFinal.toLocaleString()} 元\n`;
   prompt += `- 降本金额: ${totalSavings >= 0 ? '+' : ''}${totalSavings.toLocaleString()} 元\n`;

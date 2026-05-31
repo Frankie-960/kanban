@@ -37,6 +37,8 @@ export async function sendEmail(opts: EmailOptions): Promise<boolean> {
     return true;
   } catch (err) {
     console.error('[Email] 发送失败:', err);
+    // 降级：SMTP 发送失败时把链接打到日志，让管理员可从日志取链接手工通知用户（防 SMTP 故障期间用户卡死）
+    console.log(`[Email] 发送失败，内容降级到日志：\n  To: ${opts.to}\n  Subject: ${opts.subject}\n  Body:\n${opts.text}\n[Email] ---- end ----`);
     return false;
   }
 }
@@ -50,6 +52,19 @@ export function buildPasswordResetEmail(name: string, resetUrl: string): EmailOp
 <p><a href="${resetUrl}" style="background:#2563eb;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;">重置密码</a></p>
 <p>或复制以下链接到浏览器：<br/>${resetUrl}</p>
 <p style="color:#6b7280;font-size:12px;">如果您没有发起此请求，请忽略此邮件。</p>`,
+    to: '',
+  };
+}
+
+export function buildVerifyEmail(name: string, verifyUrl: string): EmailOptions {
+  return {
+    subject: '采购工作站 — 邮箱激活',
+    text: `您好 ${name}，\n\n欢迎加入采购工作站！请点击以下链接激活您的邮箱（链接 24 小时内有效）：\n\n${verifyUrl}\n\n如果您没有注册账号，请忽略此邮件。`,
+    html: `<p>您好 <strong>${name}</strong>，</p>
+<p>欢迎加入采购工作站！请点击以下按钮激活您的邮箱（链接 <strong>24 小时</strong>内有效）：</p>
+<p><a href="${verifyUrl}" style="background:#1677FF;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;">激活邮箱</a></p>
+<p>或复制以下链接到浏览器：<br/>${verifyUrl}</p>
+<p style="color:#6b7280;font-size:12px;">如果您没有注册账号，请忽略此邮件。</p>`,
     to: '',
   };
 }

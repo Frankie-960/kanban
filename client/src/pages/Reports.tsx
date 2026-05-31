@@ -126,7 +126,7 @@ export default function Reports() {
                     justifyContent: 'center',
                     background: theme.isDark ? '#21262d' : '#f9f9f9',
                     borderRadius: '12px 12px 0 0',
-                    color: '#1F3D2E',
+                    color: '#1677FF',
                     fontSize: 40,
                   }}>
                     <FileTextOutlined />

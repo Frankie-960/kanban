@@ -18,6 +18,7 @@ model User {
   deepseekApiKey     String?
   llmProvider        String   @default("deepseek")
   mustChangePassword Boolean  @default(false)
+  emailVerified      Boolean  @default(true)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -26,6 +27,7 @@ model User {
   statusHistories     StatusHistory[]
   announcements       Announcement[]
   passwordResetTokens PasswordResetToken[]
+  emailVerifyTokens   EmailVerifyToken[]
   projects            Project[]
 }
 
@@ -200,6 +202,18 @@ model Announcement {
 }
 
 model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([token])
+}
+
+model EmailVerifyToken {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
